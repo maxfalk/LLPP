@@ -72,26 +72,26 @@ int main(int argc, char*argv[]) {
 
 
 
-   const int delay_ms = 100;
-   Timer *timer;
-  #define TICK_LIMIT 10000
-  #define AS_FAST_AS_POSSIBLE 0
-   if(timing_mode)
-   {
-    timer = new Timer(model,mainwindow,AS_FAST_AS_POSSIBLE);
-    timer->setTickLimit(TICK_LIMIT);
-  }
+  const int delay_ms = 100;
+  Timer *timer;
+#define TICK_LIMIT 10000
+#define AS_FAST_AS_POSSIBLE 0
+  if(timing_mode)
+    {
+      timer = new Timer(model,mainwindow,AS_FAST_AS_POSSIBLE);
+      timer->setTickLimit(TICK_LIMIT);
+    }
   else
-  {
+    {
     timer = new Timer(model,mainwindow,delay_ms);
     mainwindow.show();
-
+    
   }
   cout << "Demo setup complete, running ..." << endl;
   int retval = 0;
   std::chrono::time_point<std::chrono::system_clock> start,stop;
   start = std::chrono::system_clock::now();
-
+  
   // If timing mode, just go as fast as possible without delays or graphical updates
   if(timing_mode)
   {

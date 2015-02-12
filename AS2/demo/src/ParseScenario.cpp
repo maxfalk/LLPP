@@ -8,7 +8,7 @@
 
 #include "ParseScenario.h"
 #include <string>
-
+#include <stdio.h>
 /// object constructor
 /// \date    2011-01-03
 ParseScenario::ParseScenario(QString filename) : QObject(0)
@@ -72,9 +72,14 @@ void ParseScenario::handleXmlStartElement()
 
 void ParseScenario::handleXmlEndElement()
 {
-  if (xmlReader.name() == "agent") {
-    //do nothing
+  if (xmlReader.name() == "welcome") {
+    for(uint i = 0; i < crowds.size(); i++){
+      crowds[i]->init();
+    }
+  }else if (xmlReader.name() == "agent") {
+    WayPos = 0;
   }
+
 }
 
 void ParseScenario::handleWaypoint()
@@ -83,13 +88,12 @@ void ParseScenario::handleWaypoint()
   float x = readFloat("x");
   float y = readFloat("y");
   float r = readFloat("r");
-  
-  
+   
   WaypointsX.push_back(x);
   WaypointsY.push_back(y);
   WaypointsR.push_back(r);
   Waypoints[id] = WaypointsX.size()-1;
-
+ 
 }
 void ParseScenario::handleAgent()
 {
@@ -98,6 +102,7 @@ void ParseScenario::handleAgent()
   int n = readFloat("n");
   float dx = readFloat("dx");
   float dy = readFloat("dy");
+  
   Ped::Crowd *crowd = new Ped::Crowd(n, WaypointsX.size());
   for (int i = 0; i < n; ++i)
   {
@@ -112,10 +117,10 @@ void ParseScenario::handleAddWaypoint()
 {
   QString id = readString("id");
   Ped::Crowd *crowd = crowds.back();
-  crowd->WaypointX[Waypoints[id]] = WaypointsX.at(Waypoints[id]);
-  crowd->WaypointY[Waypoints[id]] = WaypointsY.at(Waypoints[id]);
-  crowd->WaypointR[Waypoints[id]] = WaypointsR.at(Waypoints[id]);
-
+  crowd->WaypointX[WayPos] = WaypointsX.at(Waypoints[id]);
+  crowd->WaypointY[WayPos] = WaypointsY.at(Waypoints[id]);
+  crowd->WaypointR[WayPos] = WaypointsR.at(Waypoints[id]);
+  WayPos++;
 }
 
 float ParseScenario::readFloat(const QString &tag)

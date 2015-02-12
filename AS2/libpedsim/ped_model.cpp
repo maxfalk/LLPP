@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <omp.h>
 #include <iostream>
+#include <stdio.h>
 
 
 void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION _mode, int _nrOfThreads)
@@ -23,7 +24,16 @@ void *threaded_tick(void *para) {
 }
 void Ped::Model::seq()
 {
-  //Seq here
+  
+  for(int i = 0; i < crowds.size(); i++){
+    for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
+      crowds[i]->where_to_go(j);
+      crowds[i]->go(j);
+    }
+
+   }
+
+
 }
 void Ped::Model::pThreads()
 {

@@ -34,6 +34,7 @@ private:
   vector<Ped::Crowd*> crowds;
 
   //Global
+  int WayPos = 0;
   map<QString, int> Waypoints;
   vector<float> WaypointsX;
   vector<float> WaypointsY;

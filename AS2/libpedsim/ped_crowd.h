@@ -22,6 +22,7 @@ namespace Ped{
    
     
     //Methods
+    void init();
     void go(int Offset);
     void where_to_go(int Offset);
     Crowd(int, int);
@@ -58,7 +59,9 @@ namespace Ped{
     float vector_length(float *X,float *Y,float *Z, int Offset);
     float vector_length(float X,float Y,float Z);
     void set_vector_normalized(float *X,float *Y,float *Z, int Offset);
-    void set_vector_normalized(float X,float Y,float Z);
+    void set_vector_normalized(float *X,float *Y,float *Z, 
+			       int Offset, float len);
+    
 
 
   };
