@@ -10,7 +10,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 NVCC = nvcc
-SOURCES_CXX = ped_vector.cpp ped_waypoint.cpp ped_agent.cpp ped_model.cpp
+SOURCES_CXX = ped_crowd.cpp ped_model.cpp
 OBJECTS_CXX = $(SOURCES_CXX:.cpp=.cxx.o)
 
 SOURCES_CU = tick_cuda.cu
@@ -25,7 +25,7 @@ ifeq ($(shell which $(NVCC)),)
 $(warning Warning: Compiling without nvcc support. Compilation will proceed but CUDA code will not be included.)
 
 CXX=$(CXX_)
-CXXFLAGS = $(CXXFLAGS_)
+CXXFLAGS = $(CXXFLAGS_) -lcudart
 LDFLAGS = $(LDFLAGS_)
 OBJECTS =  $(OBJECTS_CXX)
 else 

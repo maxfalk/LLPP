@@ -36,12 +36,16 @@ MainWindow::MainWindow(const Ped::Model &model) : model(model)
   }
 
   // Create viewAgents with references to the position of the model counterparts
-  auto &agents = model.getAgents();
-  for(auto agent : agents)
+  auto &crowds = model.getCrowds();
+  for(auto crowd : crowds)
     {
-      viewAgents.push_back(new ViewAgent(agent,scene));
+      for(int i = 0; i < crowd->NumberOfAgents; i++){
+	viewAgents.push_back(new ViewAgent(crowd->AgentsX[i],
+					   crowd->AgentsY[i],
+					   scene));
+      }
     }
-
+  
   paint();
   graphicsView->show(); // Redundant? 
 }

@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "ped_model.h"
-#include "ped_agent.h"
+#include "ped_crowd.h"
 #include "ViewAgent.h"
 class QGraphicsView;
 
@@ -25,7 +25,7 @@ class MainWindow : public QMainWindow {
   QGraphicsView *graphicsView;
   QGraphicsScene * scene;
   const Ped::Model &model;
-std::vector<ViewAgent*> viewAgents;
+  std::vector<ViewAgent*> viewAgents;
 };
 
 

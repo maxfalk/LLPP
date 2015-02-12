@@ -3,17 +3,17 @@
 
 #include <QGraphicsScene>
 #include <QGraphicsRectItem>
-#include "ped_agent.h"
+#include "ped_crowd.h"
 
 
 class ViewAgent{
  public:
-  ViewAgent(Ped::Tagent * agent,QGraphicsScene * scene);
+  ViewAgent(float &_X, float &_Y, QGraphicsScene * scene);
   void paint();
 
  private:
-  const Ped::Tagent * model ;
-  const Ped::Tvector &pos;
+  float &X;  
+  float &Y;
   QGraphicsRectItem * rect;
 
  };

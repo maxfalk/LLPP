@@ -9,8 +9,7 @@
 #ifndef _parsescenario_h_
 #define _parsescenario_h_
 
-#include "ped_agent.h"
-#include "ped_waypoint.h"
+#include "ped_crowd.h"
 #include <QtCore>
 #include <QXmlStreamReader>
 #include <vector>
@@ -23,7 +22,7 @@ class ParseScenario : public QObject
 
 public:
   ParseScenario(QString file);
-  vector<Ped::Tagent*> getAgents() const; 
+  vector<Ped::Crowd*> getCrowds() const; 
 
   private slots:
   void processXmlLine(QByteArray data);
@@ -31,9 +30,16 @@ public:
 private:
   QXmlStreamReader xmlReader;
 
-  map<QString, Ped::Twaypoint*> waypoints;
-  vector<Ped::Tagent*> agents;
-  vector<Ped::Tagent*> tempAgents;
+  //Crowd
+  vector<Ped::Crowd*> crowds;
+
+  //Global
+  map<QString, int> Waypoints;
+  vector<float> WaypointsX;
+  vector<float> WaypointsY;
+  vector<float> WaypointsR;
+
+
 
   void handleWaypoint();
   void handleAgent();
@@ -42,7 +48,7 @@ private:
   void handleXmlEndElement();
 
   QString readString(const QString &tag);
-  double readDouble(const QString &tag);
+  float readFloat(const QString &tag);
 };
 
 #endif

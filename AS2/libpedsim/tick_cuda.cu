@@ -1,8 +1,7 @@
-#include "ped_agent.h"
-
 #include <cstdio>
 #include <iostream>
-
+#include "ped_crowd.h"
+#include <cuda_runtime.h>
 using namespace Ped;
 // For testing purposes
 void __global__ dummyKernel() 

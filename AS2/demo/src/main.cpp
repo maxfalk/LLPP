@@ -1,4 +1,4 @@
-//#include "ped_agent.h"
+#include "ped_crowd.h"
 #include "ped_model.h"
 #include "MainWindow.h"
 #include "ParseScenario.h"
@@ -42,9 +42,13 @@ int main(int argc, char*argv[]) {
         char *input = argv[++i];
         if (strcmp(input, "PTHREAD") == 0) {
           mode = Ped::IMPLEMENTATION::PTHREAD;
+	  cout << "Pthread " << "mode selected." << endl;
+	  cout << threads << " threads selected." << endl;	
         } else if (strcmp(input, "OMP") == 0) {
           mode = Ped::IMPLEMENTATION::OMP;
-        }
+	  cout << "OpenMP " << "mode selected." << endl;	
+	  cout << threads << " threads selected." << endl;      
+	  }
       } else if (strcmp(&argv[i][1], "threads") == 0) {
         threads = atoi(argv[++i]);
         if (threads < 1) {
@@ -56,23 +60,10 @@ int main(int argc, char*argv[]) {
     }
     i+=1;
   }
-  switch (mode) {
-    case Ped::IMPLEMENTATION::OMP:
-      cout << "OpenMP ";
-      break;
-    case Ped::IMPLEMENTATION::PTHREAD:
-      cout << "Pthread ";
-      break;
-    default:
-      cout << "Sequential ";
-      break; 
-  }
-  cout << "mode selected." << endl;
-  if (mode != Ped::IMPLEMENTATION::SEQ) {
-    cout << threads << " threads selected." << endl;
-  }
+  
+
   ParseScenario parser(scenefile);
-  model.setup(parser.getAgents(), mode, threads);
+  model.setup(parser.getCrowds(), mode, threads);
 
   QApplication app(argc, argv);
 

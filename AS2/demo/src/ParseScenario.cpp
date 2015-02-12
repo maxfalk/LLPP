@@ -26,9 +26,9 @@ ParseScenario::ParseScenario(QString filename) : QObject(0)
   }
 }
 
-vector<Ped::Tagent*> ParseScenario::getAgents() const
+vector<Ped::Crowd*> ParseScenario::getCrowds() const
 {
-  return agents;
+  return crowds;
 }
 
 /// Called for each line in the file
@@ -73,56 +73,54 @@ void ParseScenario::handleXmlStartElement()
 void ParseScenario::handleXmlEndElement()
 {
   if (xmlReader.name() == "agent") {
-    Ped::Tagent *a;
-    foreach (a, tempAgents)
-    {
-      agents.push_back(a);
-    }
+    //do nothing
   }
 }
 
 void ParseScenario::handleWaypoint()
 {
   QString id = readString("id");
-  double x = readDouble("x");
-  double y = readDouble("y");
-  double r = readDouble("r");
+  float x = readFloat("x");
+  float y = readFloat("y");
+  float r = readFloat("r");
   
-  Ped::Twaypoint *w = new Ped::Twaypoint(x, y, r);
-  waypoints[id] = w;
-}
+  
+  WaypointsX.push_back(x);
+  WaypointsY.push_back(y);
+  WaypointsR.push_back(r);
+  Waypoints[id] = WaypointsX.size()-1;
 
+}
 void ParseScenario::handleAgent()
 {
-  double x = readDouble("x");
-  double y = readDouble("y");
-  int n = readDouble("n");
-  double dx = readDouble("dx");
-  double dy = readDouble("dy");
-
-  tempAgents.clear();
+  float x = readFloat("x");
+  float y = readFloat("y");
+  int n = readFloat("n");
+  float dx = readFloat("dx");
+  float dy = readFloat("dy");
+  Ped::Crowd *crowd = new Ped::Crowd(n, WaypointsX.size());
   for (int i = 0; i < n; ++i)
   {
     int xPos = x + qrand()/(RAND_MAX/dx) -dx/2;
     int yPos = y + qrand()/(RAND_MAX/dy) -dy/2;
-    Ped::Tagent *a = new Ped::Tagent(xPos, yPos);
-    tempAgents.push_back(a);
+    crowd->AgentsX[i] = xPos;
+    crowd->AgentsY[i] = yPos;
   }
+  crowds.push_back(crowd);
 }
-
 void ParseScenario::handleAddWaypoint()
 {
   QString id = readString("id");
-  Ped::Tagent *a;
-  foreach (a, tempAgents)
-  {
-    a->addWaypoint(waypoints[id]);
-  }
+  Ped::Crowd *crowd = crowds.back();
+  crowd->WaypointX[Waypoints[id]] = WaypointsX.at(Waypoints[id]);
+  crowd->WaypointY[Waypoints[id]] = WaypointsY.at(Waypoints[id]);
+  crowd->WaypointR[Waypoints[id]] = WaypointsR.at(Waypoints[id]);
+
 }
 
-double ParseScenario::readDouble(const QString &tag)
+float ParseScenario::readFloat(const QString &tag)
 {
-  return readString(tag).toDouble();
+  return readString(tag).toFloat();
 }
 
 QString ParseScenario::readString(const QString &tag)
