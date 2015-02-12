@@ -42,35 +42,27 @@ int main(int argc, char*argv[]) {
         char *input = argv[++i];
         if (strcmp(input, "PTHREAD") == 0) {
           mode = Ped::IMPLEMENTATION::PTHREAD;
+	  cout << "PTHREAD mode selected." << endl;
         } else if (strcmp(input, "OMP") == 0) {
           mode = Ped::IMPLEMENTATION::OMP;
-        }
+	  cout << "OMP mode selected." << endl;
+        } else if (strcmp(input, "VECTOR") == 0) {
+          mode = Ped::IMPLEMENTATION::VECTOR;
+	  cout << "VECTOR mode selected." << endl;
+	}
       } else if (strcmp(&argv[i][1], "threads") == 0) {
         threads = atoi(argv[++i]);
         if (threads < 1) {
           threads = 4;
-        }
+	  cout << threads << " threads selected." << endl;
+	}
       }
     } else { // Assume it is a path to scenefile
       scenefile = argv[i];
     }
     i+=1;
   }
-  switch (mode) {
-    case Ped::IMPLEMENTATION::OMP:
-      cout << "OpenMP ";
-      break;
-    case Ped::IMPLEMENTATION::PTHREAD:
-      cout << "Pthread ";
-      break;
-    default:
-      cout << "Sequential ";
-      break; 
-  }
-  cout << "mode selected." << endl;
-  if (mode != Ped::IMPLEMENTATION::SEQ) {
-    cout << threads << " threads selected." << endl;
-  }
+ 
   ParseScenario parser(scenefile);
   model.setup(parser.getAgents(), mode, threads);
 

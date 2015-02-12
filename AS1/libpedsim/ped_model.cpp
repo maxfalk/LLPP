@@ -3,8 +3,12 @@
 #include "cuda_dummy.h"
 #include <pthread.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <omp.h>
 #include <iostream>
+#include <xmmintrin.h>
+#include <stdint.h>
+#include <assert.h>
 
 struct _threadInfo {
   int startIndex;
@@ -17,6 +21,27 @@ void Ped::Model::setup(vector<Ped::Tagent*> agentsInScenario, IMPLEMENTATION _mo
   nrOfThreads = _nrOfThreads;
   agents = agentsInScenario;
   implementation = _mode;
+  
+  int err;
+  if(_mode == VECTOR){
+    printf("preparing for vector\n");
+    err = posix_memalign((void **)&agentPos, __alignof__(__m128d), 
+		   agents.size()*2 * sizeof(double*));
+    if(err != 0)
+      printf("ERROR: out of mem\n");
+    err = posix_memalign((void **)&agentForce, __alignof__(__m128d)
+		   , agents.size()*2 * sizeof(double*));
+    if(err != 0)
+      printf("ERROR: out of mem\n");
+
+    
+    assert(0 == ((intptr_t)agentPos) % __alignof__(__m128d));
+    assert(0 == ((intptr_t)agentForce) % __alignof__(__m128d));
+   
+    vecPrepare();
+    printf("vector prepared\n");
+  }
+
 }
 
 const std::vector<Ped::Tagent*> Ped::Model::getAgents() const
@@ -36,11 +61,38 @@ void *threaded_tick(void *para) {
 }
 void Ped::Model::seq()
 {
- for (int i = 0; i < agents.size(); i++) {
-      agents[i]->whereToGo();
-      agents[i]->go();
-    }
+  for (int i = 0; i < agents.size(); i++) {
+    agents[i]->whereToGo();
+    agents[i]->go();
+  }
 }
+void Ped::Model::vecPrepare(){
+
+  for(int i,a = 0; i < agents.size(); i++, a+=2){
+    agentPos[a] = agents[i]->getPos()->x;
+    agentPos[a+1] = agents[i]->getPos()->y;
+    agentForce[a] = agents[i]->getForce()->x;
+    agentForce[a+1] = agents[i]->getForce()->y;
+  }
+
+  printf("Num: %f\n", agentPos[0]);
+  printf("Num1: %f\n", agentPos[1]);
+
+}
+void Ped::Model::vec()
+{
+
+  __m128d *m1 = (__m128d *)agentPos;
+  __m128d *m2 = (__m128d *)agentForce;
+
+  for(int i = 0; i < agents.size(); i++, agentPos += 2){
+    agents[i]->whereToGo();
+    //Go
+    _mm_store_pd(agentPos, _mm_add_pd(*m1, *m2));
+  }
+
+}
+
 void Ped::Model::pThreads()
 {
   pthread_t threads[nrOfThreads];
@@ -81,6 +133,8 @@ void Ped::Model::tick()
     seq();
   } else if (implementation == PTHREAD) {
     pThreads();
+  } else if (implementation == VECTOR) {
+    vec();
   } else {
     omp();
   }

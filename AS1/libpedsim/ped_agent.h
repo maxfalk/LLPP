@@ -29,7 +29,6 @@ namespace Ped {
     Tagent(int posX, int posY);
     Tagent(double posX, double posY);
 
-
     // Computes forces that determine the next position
     void whereToGo();
 
@@ -37,6 +36,8 @@ namespace Ped {
     void go();
 
     const Tvector& getPosition() const { return position; }
+    Tvector* getForce() { return &waypointForce; }
+    Tvector* getPos() { return &position; }
     double getX() const { return position.x; };
     double getY() const { return position.y; };
 

@@ -8,16 +8,24 @@ namespace Ped{
   class Model
   {
   public:
+
+    
     void setup(std::vector<Tagent*> agentsInScenario, IMPLEMENTATION mode, int nrOfThreads);
     void tick();
     const std::vector<Tagent*> getAgents() const;
   private:
+
+    double *agentPos;
+    double *agentForce;
+    
     int nrOfThreads;
     IMPLEMENTATION implementation;
     std::vector<Tagent*> agents;
     void omp();
     void seq();
     void pThreads();
+    void vecPrepare();
+    void vec();
   };
 }
 #endif

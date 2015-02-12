@@ -91,10 +91,12 @@ Ped::Tvector Ped::Tagent::computeDirection() {
   Tvector direction;
   bool reachesDestination = false; // if agent reaches destination in n
   if (lastDestination == NULL) {
-    Twaypoint tempDestination(destination->getx(), destination->gety(), destination->getr());
+    Twaypoint tempDestination(destination->getx(), 
+			      destination->gety(), destination->getr());
     
     tempDestination.settype(Ped::Twaypoint::TYPE_POINT);
-    direction = tempDestination.getForce(position.x, position.y, 0, 0, &reachesDestination);
+    direction = tempDestination.getForce(position.x, 
+					 position.y, 0, 0, &reachesDestination);
   }
   else {
     direction = destination->getForce(position.x, position.y,
