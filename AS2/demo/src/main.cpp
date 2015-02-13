@@ -31,32 +31,32 @@ int main(int argc, char*argv[]) {
   // Argument handling
   while(i < argc) {
     if(argv[i][0] == '-' && argv[i][1] == '-') {
-      if(strcmp(&argv[i][2],"timing-mode") == 0) {
-        cout << "Timing mode on\n";
-        timing_mode = true;
-      } else {
-        cerr << "Unrecognized command: \"" << argv[i] << "\". Ignoring ..." << endl;
-      }
-    } else if (argv[i][0] == '-') {
-      if (strcmp(&argv[i][1], "mode") == 0) {
-        char *input = argv[++i];
-        if (strcmp(input, "PTHREAD") == 0) {
-          mode = Ped::IMPLEMENTATION::PTHREAD;
-	  cout << "Pthread " << "mode selected." << endl;
-	  cout << threads << " threads selected." << endl;	
-        } else if (strcmp(input, "OMP") == 0) {
-          mode = Ped::IMPLEMENTATION::OMP;
-	  cout << "OpenMP " << "mode selected." << endl;	
-	  cout << threads << " threads selected." << endl;      
-	  }
-      } else if (strcmp(&argv[i][1], "threads") == 0) {
-        threads = atoi(argv[++i]);
-        if (threads < 1) {
-          threads = 4;
+        if(strcmp(&argv[i][2],"timing-mode") == 0) {
+            cout << "Timing mode on\n";
+            timing_mode = true;
+        } else {
+            cerr << "Unrecognized command: \"" << argv[i] << "\". Ignoring ..." << endl;
         }
-      }
+    } else if (argv[i][0] == '-') {
+        if (strcmp(&argv[i][1], "mode") == 0) {
+            char *input = argv[++i];
+            if (strcmp(input, "PTHREAD") == 0) {
+                mode = Ped::IMPLEMENTATION::PTHREAD;
+                cout << "Pthread " << "mode selected." << endl;
+                cout << threads << " threads selected." << endl;	
+            } else if (strcmp(input, "OMP") == 0) {
+                mode = Ped::IMPLEMENTATION::OMP;
+                cout << "OpenMP " << "mode selected." << endl;	
+                cout << threads << " threads selected." << endl;      
+            }
+        } else if (strcmp(&argv[i][1], "threads") == 0) {
+            threads = atoi(argv[++i]);
+            if (threads < 1) {
+                threads = 4;
+            }
+        }
     } else { // Assume it is a path to scenefile
-      scenefile = argv[i];
+        scenefile = argv[i];
     }
     i+=1;
   }
