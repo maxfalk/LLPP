@@ -43,10 +43,8 @@ namespace Ped{
     float *LastDestinationY;
     float *LastDestinationR;
 
-    //Number of waypoints, eg length(WaypointX) which is the same length as 
-    // length(WaypointY) and length(WaypointR)
     int NumberOfWaypoints;
-    int CurrentWaypoint;
+    int *CurrentWaypoint;
 
     //Methods
     void vector_alloc(void **);

@@ -11,8 +11,10 @@
 Ped::Crowd::Crowd(int _NumberOfAgents, int _NumberOfWaypoints){
   NumberOfAgents = _NumberOfAgents;
   NumberOfWaypoints = _NumberOfWaypoints;
-  CurrentWaypoint = 0;
+
   //Create all arrays dynamical allocated for number of agents
+  CurrentWaypoint = new int[NumberOfAgents];
+
   AgentsX = new float[NumberOfAgents];
   AgentsY = new float[NumberOfAgents];
   AgentsZ = new float[NumberOfAgents];
@@ -34,6 +36,8 @@ Ped::Crowd::Crowd(int _NumberOfAgents, int _NumberOfWaypoints){
   WaypointR = new float[NumberOfWaypoints];
 
   for(int i = 0; i < NumberOfAgents; i++){
+    CurrentWaypoint[i] = 0;
+
     AgentsX[i] = 0;
     AgentsY[i] = 0;
     AgentsZ[i] = 0;
@@ -55,13 +59,15 @@ Ped::Crowd::Crowd(int _NumberOfAgents, int _NumberOfWaypoints){
 
 
 }
+
 //Destructor
 Ped::Crowd::~Crowd(){
   //Free all memory 
 
-  delete[]  AgentsX;
-  delete[]  AgentsY;
-  delete[]  AgentsZ;
+  delete[] CurrentWaypoint;
+  delete[] AgentsX;
+  delete[] AgentsY;
+  delete[] AgentsZ;
   
   delete[] MoveForceX;
   delete[] MoveForceY;
@@ -83,9 +89,9 @@ Ped::Crowd::~Crowd(){
 void Ped::Crowd::init(){
 
   for(int i = 0; i < NumberOfAgents; i++){
-    DestinationX[i] = WaypointX[CurrentWaypoint];
-    DestinationY[i] = WaypointY[CurrentWaypoint];
-    DestinationR[i] = WaypointR[CurrentWaypoint];
+    DestinationX[i] = WaypointX[CurrentWaypoint[i]];
+    DestinationY[i] = WaypointY[CurrentWaypoint[i]];
+    DestinationR[i] = WaypointR[CurrentWaypoint[i]];
   }
 
 }
@@ -117,8 +123,8 @@ void Ped::Crowd::where_to_go(int Offset){
 
 void Ped::Crowd::setNextDestination(int Offset) {
   
-  CurrentWaypoint++;
-  int NextWaypoint = CurrentWaypoint  % NumberOfWaypoints;
+  CurrentWaypoint[Offset]++;
+  int NextWaypoint = CurrentWaypoint[Offset]  % NumberOfWaypoints;
   DestinationX[Offset] = WaypointX[NextWaypoint];
   DestinationY[Offset] = WaypointY[NextWaypoint];
   DestinationR[Offset] = WaypointR[NextWaypoint];
