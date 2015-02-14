@@ -11,7 +11,7 @@
 Ped::Crowd::Crowd(int _NumberOfAgents, int _NumberOfWaypoints){
   NumberOfAgents = _NumberOfAgents;
   NumberOfWaypoints = _NumberOfWaypoints;
-  
+  mode = 0;
   if(mode == 1){
     constructor_vector();
   }else{
