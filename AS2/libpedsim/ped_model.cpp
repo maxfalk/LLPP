@@ -23,12 +23,6 @@ const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
 
 void *threaded_tick(void *indices) {
     //Pthread here
-    int startIndex = *(int *) indices;
-    int stopIndex = *(int *) (indices)+1;
-    for(int i = 0; startIndex<stopIndex; i++){
-        crowd[i]->where_to_go(i);
-        crowd[i]->go(i);
-    }
 }
 void Ped::Model::seq()
 {
@@ -37,6 +31,7 @@ void Ped::Model::seq()
     for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
       crowds[i]->where_to_go(j);
       crowds[i]->go(j);
+      
     }
    }
 
@@ -44,30 +39,8 @@ void Ped::Model::seq()
 void Ped::Model::pThreads()
 {
     //Pthreads here
-    pthread_t threads[nrOfThreads];
-    Crowd *crowd1 = crowds[0];
-    Crowd *crowd2 = crowds[1];
 
-    for (int i=0; i<nrOfThreads; i++) {
-        int *indices = (int *) malloc(2*sizeof(int));
-        indices[0] = (crowd1->NumberOfAgents/nrOfThreads)*i;
-        if (i == nrOfThreads-1) {
-            indices[1] = crowd1->NumberOfAgents;
-        } else {
-            indices[1] = (crowd1->NumberOfAgents/nrOfThreads)*(i+1);
-        }
-        pthread_create(&threads[i], NULL, threaded_tick, (void *) indices);
-    }
-    for (int i=0; i<nrOfThreads; i++) {
-        int *indices = (int *) malloc(2*sizeof(int));
-        indices[0] = (crowd2->NumberOfAgents/nrOfThreads)*i; 
-        if (i == nrOfThreads-1) {
-            indices[1] = crowd2->NumberOfAgents;
-        } else {
-            indices[1] = (crowd2->NumberOfAgents/nrOfThreads)*(i+1);
-        }
-        pthread_create(&threads[i], NULL, threaded_tick, (void *) indices);
-    }
+
 }
 void Ped::Model::omp()
 {

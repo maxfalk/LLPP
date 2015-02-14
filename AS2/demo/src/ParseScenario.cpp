@@ -11,8 +11,9 @@
 #include <stdio.h>
 /// object constructor
 /// \date    2011-01-03
-ParseScenario::ParseScenario(QString filename) : QObject(0)
+ParseScenario::ParseScenario(QString filename, int _vector_mode) : QObject(0)
 {
+  vector_mode = _vector_mode;
   QFile file(filename);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
   {
@@ -104,7 +105,7 @@ void ParseScenario::handleAgent()
   float dx = readFloat("dx");
   float dy = readFloat("dy");
   
-  Ped::Crowd *crowd = new Ped::Crowd(n, WaypointsX.size());  
+  Ped::Crowd *crowd = new Ped::Crowd(n, WaypointsX.size(), vector_mode);  
   for (int i = 0; i < n; ++i)
   {
     int xPos = x + qrand()/(RAND_MAX/dx) -dx/2;

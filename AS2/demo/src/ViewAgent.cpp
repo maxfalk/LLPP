@@ -12,8 +12,8 @@ ViewAgent::ViewAgent(float &_X, float &_Y,QGraphicsScene * scene)
   QPen outlinePen(Qt::black);
   outlinePen.setWidth(2);
  
-  rect =  scene->addRect(MainWindow::cellToPixel(X),
-			 MainWindow::cellToPixel(Y),
+  rect =  scene->addRect(MainWindow::cellToPixel(((int)X)),
+			 MainWindow::cellToPixel(((int)Y)),
 			 MainWindow::cellsizePixel-1 ,
 			 MainWindow::cellsizePixel-1 , 
 			 outlinePen, blueBrush);

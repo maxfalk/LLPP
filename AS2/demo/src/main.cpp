@@ -23,6 +23,7 @@
 int main(int argc, char*argv[]) { 
   Ped::Model model;
   Ped::IMPLEMENTATION mode = Ped::IMPLEMENTATION::SEQ;
+  int vector_mode = 0;
   int threads = 4;
   bool timing_mode = 0;
   int i = 1;
@@ -30,12 +31,14 @@ int main(int argc, char*argv[]) {
 
   // Argument handling
   while(i < argc) {
+
     if(argv[i][0] == '-' && argv[i][1] == '-') {
         if(strcmp(&argv[i][2],"timing-mode") == 0) {
             cout << "Timing mode on\n";
             timing_mode = true;
         } else {
-            cerr << "Unrecognized command: \"" << argv[i] << "\". Ignoring ..." << endl;
+            cerr << "Unrecognized command: \"" << argv[i] 
+		 << "\". Ignoring ..." << endl;
         }
     } else if (argv[i][0] == '-') {
         if (strcmp(&argv[i][1], "mode") == 0) {
@@ -43,18 +46,20 @@ int main(int argc, char*argv[]) {
             if (strcmp(input, "PTHREAD") == 0) {
                 mode = Ped::IMPLEMENTATION::PTHREAD;
                 cout << "Pthread " << "mode selected." << endl;
-                cout << threads << " threads selected." << endl;	
             } else if (strcmp(input, "OMP") == 0) {
                 mode = Ped::IMPLEMENTATION::OMP;
                 cout << "OpenMP " << "mode selected." << endl;	
-                cout << threads << " threads selected." << endl;      
             }
         } else if (strcmp(&argv[i][1], "threads") == 0) {
             threads = atoi(argv[++i]);
             if (threads < 1) {
                 threads = 4;
             }
-        }
+	    cout << threads << " threads selected." << endl;      
+        }else if(strcmp(&argv[i][1], "vector") == 0){
+	  vector_mode = 1;
+	  printf("Vectors mode\n");
+	}
     } else { // Assume it is a path to scenefile
         scenefile = argv[i];
     }
@@ -62,7 +67,7 @@ int main(int argc, char*argv[]) {
   }
   
 
-  ParseScenario parser(scenefile);
+  ParseScenario parser(scenefile, vector_mode);
   model.setup(parser.getCrowds(), mode, threads);
 
   QApplication app(argc, argv);

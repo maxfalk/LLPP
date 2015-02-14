@@ -21,7 +21,7 @@ class ParseScenario : public QObject
   Q_OBJECT
 
 public:
-  ParseScenario(QString file);
+  ParseScenario(QString file, int _vector_mode);
   vector<Ped::Crowd*> getCrowds() const; 
 
   private slots:
@@ -29,7 +29,7 @@ public:
 	
 private:
   QXmlStreamReader xmlReader;
-
+  int vector_mode;
   //Crowd
   vector<Ped::Crowd*> crowds;
 

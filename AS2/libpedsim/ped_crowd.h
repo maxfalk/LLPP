@@ -25,14 +25,11 @@ namespace Ped{
     //Methods
     void constructor();
     void init();
-    void go(int Offset);
+    void go(int &Offset);
     void where_to_go(int Offset);
-    Crowd(int, int);
+    Crowd(int, int, int);
     ~Crowd();
     //Vectorized methods
-    
-    void go_vectorized(int);
-    void computeDirection_vectorized(int Offset);
   
       private:
     //Variables
@@ -68,12 +65,14 @@ namespace Ped{
   
     //Vectorized
     void constructor_vector();
-    void vector_length_vectorized(float*,float*,float*,int, __m128*);
+    void vector_length_vectorized(__m128*,__m128*,__m128*, __m128*);
     void set_vector_normalized_vectorized(__m128*,__m128*,__m128*,__m128*);
     void set_force_vectorized(__m128 *mTempX, __m128 *mTempY, float *mTempZ, 
 			      __m128 *X, __m128 *Y, int Offset, bool *reached);
-    void vector_length_vectorized(__m128 *mX, __m128 *mY, __m128 *mZ, __m128 *lengths);
-
+    void go_vectorized(int);
+    void computeDirection_vectorized(int Offset);
+    void setNextDestination_vectorized(int Offset);
+  
   };
 };
 #endif

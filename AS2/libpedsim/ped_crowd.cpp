@@ -8,11 +8,12 @@
 #include <math.h>
 
 //Constructor
-Ped::Crowd::Crowd(int _NumberOfAgents, int _NumberOfWaypoints){
+Ped::Crowd::Crowd(int _NumberOfAgents, int _NumberOfWaypoints, int _mode){
   NumberOfAgents = _NumberOfAgents;
   NumberOfWaypoints = _NumberOfWaypoints;
-  mode = 0;
+  mode = _mode;
   if(mode == 1){
+    printf("Alloc for vectors\n");
     constructor_vector();
   }else{
     constructor();
@@ -72,26 +73,6 @@ void Ped::Crowd::constructor(){
   WaypointY = new float[NumberOfWaypoints];
   WaypointR = new float[NumberOfWaypoints];
 
-  for(int i = 0; i < NumberOfAgents; i++){
-    CurrentWaypoint[i] = 0;
-
-    AgentsX[i] = 0;
-    AgentsY[i] = 0;
-    AgentsZ[i] = 0;
-    
-    MoveForceX[i] = 0;
-    MoveForceY[i] = 0;
-    MoveForceZ[i] = 0;
-    
-    DestinationX[i] = 0;
-    DestinationY[i] = 0;
-    DestinationR[i] = 0;
-  
-    LastDestinationX[i] = 0;
-    LastDestinationY[i] = 0;
-    LastDestinationR[i] = 0;
-  }
-
 }
 void Ped::Crowd::constructor_vector(){
   vector_alloc((void **)&CurrentWaypoint, NumberOfAgents);
@@ -122,6 +103,8 @@ void Ped::Crowd::constructor_vector(){
 void Ped::Crowd::init(){
 
   for(int i = 0; i < NumberOfAgents; i++){
+    CurrentWaypoint[i] = 0;
+
     DestinationX[i] = WaypointX[CurrentWaypoint[i]];
     DestinationY[i] = WaypointY[CurrentWaypoint[i]];
     DestinationR[i] = WaypointR[CurrentWaypoint[i]];
@@ -139,30 +122,54 @@ void Ped::Crowd::vector_alloc(void **memptr, int NumberOfFloats){
   assert(0 == ((intptr_t)*memptr) % __alignof__(__m128));
 
 }
-void Ped::Crowd::go(int Offset){
+void Ped::Crowd::go(int &Offset){
+  if(mode == 1){
+    go_vectorized(Offset);
+    //check so that there are 4 agents left
+    
+    Offset +=3;
+  }else{
+    AgentsX[Offset] = round(AgentsX[Offset] + MoveForceX[Offset]);
+    AgentsY[Offset] = round(AgentsY[Offset] + MoveForceY[Offset]);
 
-  AgentsX[Offset] = round(AgentsX[Offset] + MoveForceX[Offset]);
-  AgentsY[Offset] = round(AgentsY[Offset] + MoveForceY[Offset]);
 
+  }
+  
 }
 void Ped::Crowd::go_vectorized(int Offset){
-
-  __m128 *mAgentsX =(__m128 *) &AgentsX[Offset]; 
-  __m128 *mAgentsY =(__m128 *) &AgentsY[Offset]; 
-  __m128 *mMoveForceX =(__m128 *) &MoveForceX[Offset]; 
-  __m128 *mMoveForceY =(__m128 *) &MoveForceY[Offset];
-
+  /*
+  __m128 *mAgentsX = (__m128 *) &AgentsX[Offset]; 
+  __m128 *mAgentsY = (__m128 *) &AgentsY[Offset]; 
+  __m128 *mMoveForceX = (__m128 *) &MoveForceX[Offset]; 
+  __m128 *mMoveForceY = (__m128 *) &MoveForceY[Offset];
   *mAgentsX = _mm_add_ps(*mAgentsX, *mMoveForceX);
-  *mAgentsX = _mm_add_ps(*mAgentsY, *mMoveForceY);
+  *mAgentsY = _mm_add_ps(*mAgentsY, *mMoveForceY);
+  */
+  for(int i = 0; i<4; i++){
+    AgentsX[Offset+i] = round(AgentsX[Offset+i] + MoveForceX[Offset+i]);
+    AgentsY[Offset+i] = round(AgentsY[Offset+i] + MoveForceY[Offset+i]);
+
+  }
 
 
 }
 
 void Ped::Crowd::where_to_go(int Offset){
   
-  computeDirection(Offset);
-  set_vector_normalized(MoveForceX, MoveForceY, MoveForceZ, Offset);
-    
+  if(mode == 1){
+    __m128 *mMoveForceX = (__m128 *) &MoveForceX[Offset];
+    __m128 *mMoveForceY = (__m128 *) &MoveForceY[Offset];
+    __m128 *mMoveForceZ = (__m128 *) &MoveForceZ[Offset];
+    __m128 mLength;
+
+    computeDirection_vectorized(Offset);
+    vector_length_vectorized(mMoveForceX,mMoveForceY, mMoveForceZ, &mLength);
+    set_vector_normalized_vectorized(mMoveForceX,mMoveForceY, mMoveForceZ,
+				     &mLength);
+  }else{
+    computeDirection(Offset);
+    set_vector_normalized(MoveForceX, MoveForceY, MoveForceZ, Offset);
+  }
 }
 
 void Ped::Crowd::setNextDestination(int Offset) {
@@ -172,6 +179,31 @@ void Ped::Crowd::setNextDestination(int Offset) {
   DestinationX[Offset] = WaypointX[NextWaypoint];
   DestinationY[Offset] = WaypointY[NextWaypoint];
   DestinationR[Offset] = WaypointR[NextWaypoint];
+
+}
+void Ped::Crowd::setNextDestination_vectorized(int Offset) {
+  
+  __m128 *mCuWay = (__m128 *) &CurrentWaypoint[Offset];
+  __m128 mAdd1 = _mm_set1_ps(1.0f);
+  *mCuWay = _mm_add_ps(*mCuWay, mAdd1);
+
+  float tNextWaypointX[4]  __attribute__((aligned(16)));
+  float tNextWaypointY[4]  __attribute__((aligned(16)));
+  float tNextWaypointR[4]  __attribute__((aligned(16)));
+  for(int i=0; i < 4; i++){
+    int NextWay = (CurrentWaypoint[Offset + i]  % NumberOfWaypoints);
+    tNextWaypointX[i] = WaypointX[NextWay];
+    tNextWaypointY[i] = WaypointY[NextWay];
+    tNextWaypointR[i] = WaypointR[NextWay];
+
+  }
+  __m128 *mNextWayX = (__m128 *) tNextWaypointX;
+  __m128 *mNextWayY = (__m128 *) tNextWaypointY;
+  __m128 *mNextWayR = (__m128 *) tNextWaypointR;
+  
+  _mm_store_ps(&DestinationX[Offset], *mNextWayX); 
+  _mm_store_ps(&DestinationY[Offset], *mNextWayY); 
+  _mm_store_ps(&DestinationR[Offset], *mNextWayR); 
 
 }
 
@@ -202,7 +234,7 @@ void Ped::Crowd::computeDirection(int Offset) {
 }
 void Ped::Crowd::computeDirection_vectorized(int Offset) {
 
- bool reachesDestination[4] = {false,false,false,false}; // if agent reaches destination in n 
+ bool reachesDestination[4] = {false,false,false,false}; 
   __m128 *mDestX = (__m128*) &DestinationX[Offset]; 
   __m128 *mDestY = (__m128*) &DestinationY[Offset];
   __m128 * mAgentX = (__m128 *) &AgentsX[Offset];
@@ -248,15 +280,16 @@ void Ped::Crowd::set_force(float *temp, float *X, float *Y,
 }
 
 void Ped::Crowd::set_force_vectorized(__m128 *mTempX, __m128 *mTempY, float *TempZ, 
-				      __m128 *mX, __m128 *mY, int Offset, bool *reached){
+				      __m128 *mX, __m128 *mY, 
+				      int Offset, bool *reached){
 
-  float lengths[4];
-  __m128 * mlengths = (__m128 *) lengths;
+  float lengths[4] __attribute__((aligned(16)));
+
   __m128 diffX = _mm_sub_ps(*mTempX, *mX);
   __m128 diffY = _mm_sub_ps(*mTempY, *mY);
-  __m128 diffZ = _mm_set_ps1(0);
+  __m128 diffZ = _mm_set1_ps(0);
   vector_length_vectorized(&diffX, &diffY, &diffZ , ((__m128*)&lengths));
-    
+  __m128 *mlengths = (__m128 *) lengths;    
 
   //Check which vectors have arrived at dest
   for(int i = 0; i < 4; i++){
@@ -286,7 +319,8 @@ float Ped::Crowd::vector_length(float *X,float *Y,float *Z, int Offset){
 }
 void Ped::Crowd::vector_length_vectorized(__m128 *mX, __m128 *mY, __m128 *mZ, __m128 *lengths){
 
-  *lengths = _mm_sqrt_ps( _mm_add_ps(_mm_add_ps(_mm_mul_ps(*mX,*mX),
+  *lengths = _mm_sqrt_ps(_mm_add_ps( _mm_add_ps(
+						_mm_mul_ps(*mX,*mX),
 						_mm_mul_ps(*mY,*mY)),
 				     _mm_mul_ps(*mZ,*mZ)));
 			  
@@ -328,10 +362,11 @@ void Ped::Crowd::set_vector_normalized(float *X,float *Y,float *Z,
   }
 
 }
-void Ped::Crowd::set_vector_normalized_vectorized(__m128 *mX, __m128 *mY, __m128 *mZ, __m128 *len){
- 
+void Ped::Crowd::set_vector_normalized_vectorized(__m128 *mX, __m128 *mY,
+						  __m128 *mZ, __m128 *len){
+  //What happens with division by zero?
   *mX = _mm_div_ps(*mX,*len);
-  *mX = _mm_div_ps(*mY,*len);
+  *mY = _mm_div_ps(*mY,*len);
   *mZ = _mm_div_ps(*mZ,*len); 
 
 }
