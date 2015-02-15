@@ -77,20 +77,20 @@ void Ped::Model::pThreads()
 }
 void Ped::Model::omp()
 {
-  //OMP here
+    //OMP here
+    Crowd* crowd1 = crowds[0]; 
+    Crowd* crowd2 = crowds[1]; 
  
-    for(int i = 0; i < crowds.size(); i++){
-#pragma omp paralell
-        { 
-#pragma omp for
-            for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
-                crowds[i]->where_to_go(j);
-                crowds[i]->go(j);
-            }
-      
-        }
+    #pragma omp parallel for
+    for(int i = 0; i < crowd1->NumberOfAgents; i++){
+        crowd1->where_to_go(i);
+        crowd1->go(i);
     }
-
+    #pragma omp parallel for
+    for(int i = 0; i < crowd2->NumberOfAgents; i++){
+        crowd2->where_to_go(i);
+        crowd2->go(i);
+    }
 
 }
 void Ped::Model::tick()
