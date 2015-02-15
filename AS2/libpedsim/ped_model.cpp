@@ -60,16 +60,6 @@ void create_threads(Ped::Crowd* c, int nrOfThreads) {
 }
 void Ped::Model::pThreads()
 {
-    //Pthreads here
-    //int nrOfThreads1;
-    //int nrOfThreads2;
-    //if ((nrOfThreads/2)*2 < nrOfThreads) {
-    //    nrOfThreads1 = nrOfThreads/2;
-    //    nrOfThreads2 = nrOfThreads/2+1;
-    //} else {
-    //    nrOfThreads1 = nrOfThreads/2;
-    //    nrOfThreads2 = nrOfThreads/2;
-    //}
 
     create_threads(crowds[0], nrOfThreads);
     create_threads(crowds[1], nrOfThreads);
