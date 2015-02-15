@@ -51,7 +51,7 @@ void create_threads(Ped::Crowd* c, int nrOfThreads) {
         int *indices = (int *) malloc(2*sizeof(int));
         indices[0] = (c->NumberOfAgents/nrOfThreads)*i;
         if (nrOfThreads-i == 1) {
-            indices[1] = c->NumberOfAgents/nrOfThreads;
+            indices[1] = c->NumberOfAgents;
         } else {
             indices[1] = (c->NumberOfAgents/nrOfThreads)*(i+1);
         }
@@ -61,35 +61,32 @@ void create_threads(Ped::Crowd* c, int nrOfThreads) {
 void Ped::Model::pThreads()
 {
     //Pthreads here
-    int nrOfThreads1;
-    int nrOfThreads2;
-    if ((nrOfThreads/2)*2 < nrOfThreads) {
-        nrOfThreads1 = nrOfThreads/2;
-        nrOfThreads2 = nrOfThreads/2+1;
-    } else {
-        nrOfThreads1 = nrOfThreads/2;
-        nrOfThreads2 = nrOfThreads/2;
-    }
+    //int nrOfThreads1;
+    //int nrOfThreads2;
+    //if ((nrOfThreads/2)*2 < nrOfThreads) {
+    //    nrOfThreads1 = nrOfThreads/2;
+    //    nrOfThreads2 = nrOfThreads/2+1;
+    //} else {
+    //    nrOfThreads1 = nrOfThreads/2;
+    //    nrOfThreads2 = nrOfThreads/2;
+    //}
 
-    create_threads(crowds[0], nrOfThreads1);
-    create_threads(crowds[1], nrOfThreads2);
+    create_threads(crowds[0], nrOfThreads);
+    create_threads(crowds[1], nrOfThreads);
 
 }
 void Ped::Model::omp()
 {
     //OMP here
-    Crowd* crowd1 = crowds[0]; 
-    Crowd* crowd2 = crowds[1]; 
- 
     #pragma omp parallel for
-    for(int i = 0; i < crowd1->NumberOfAgents; i++){
-        crowd1->where_to_go(i);
-        crowd1->go(i);
+    for(int i = 0; i < crowds[0]->NumberOfAgents; i++){
+        crowds[0]->where_to_go(i);
+        crowds[0]->go(i);
     }
     #pragma omp parallel for
-    for(int i = 0; i < crowd2->NumberOfAgents; i++){
-        crowd2->where_to_go(i);
-        crowd2->go(i);
+    for(int i = 0; i < crowds[1]->NumberOfAgents; i++){
+        crowds[1]->where_to_go(i);
+        crowds[1]->go(i);
     }
 
 }
