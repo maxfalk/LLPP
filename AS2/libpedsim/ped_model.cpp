@@ -1,5 +1,4 @@
 #include "ped_model.h"
-#include "cuda_dummy.h"
 #include <pthread.h>
 #include <stdlib.h>
 #include <omp.h>
@@ -14,8 +13,25 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION 
   crowds = crowdInScenario;
   implementation = _mode;
   crowd = crowds;
-}
 
+  if(implementation == CUDA){
+    for(int i = 0; i < crowds.size(); i++)
+      crowds[i]->init_cuda();
+
+  }
+
+}
+Ped::Model::~Model(){
+
+  if(implementation == CUDA){
+    for(int i = 0; i < crowds.size(); i++)
+      crowds[i]->cuda_free();
+
+  }
+
+
+
+}
 const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
 {
   return crowds;
@@ -80,6 +96,32 @@ void Ped::Model::omp()
     }
 
 }
+void Ped::Model::vector()
+{
+
+  for(int i = 0; i < crowds.size(); i++){
+    for(int j = 0; j < crowds[i]->NumberOfAgents; j+=4){
+      crowds[i]->where_to_go_vectorized(j);
+      crowds[i]->go_vectorized(j);
+      
+    }
+   }
+
+
+
+}
+void Ped::Model::cuda(){
+
+  
+  for(int i = 0; i < crowds.size(); i++){
+    crowds[i]->where_to_go_cuda();
+    crowds[i]->go_cuda();
+   }
+
+
+
+
+}
 void Ped::Model::tick()
 {
   if (implementation == SEQ) {
@@ -87,8 +129,10 @@ void Ped::Model::tick()
   } else if (implementation == PTHREAD) {
     pThreads();
   }else if (implementation == VECTOR){
-    //vector
-  } else {
+    vector();
+  }else if(implementation == CUDA){ 
+    cuda();
+  }else {
     omp();
   }
 }

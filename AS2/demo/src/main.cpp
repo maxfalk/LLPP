@@ -23,7 +23,7 @@
 int main(int argc, char*argv[]) { 
   Ped::Model model;
   Ped::IMPLEMENTATION mode = Ped::IMPLEMENTATION::SEQ;
-  int vector_mode = 0;
+  int start_mode = 0;
   int threads = 4;
   bool timing_mode = 0;
   int i = 1;
@@ -49,17 +49,21 @@ int main(int argc, char*argv[]) {
             } else if (strcmp(input, "OMP") == 0) {
                 mode = Ped::IMPLEMENTATION::OMP;
                 cout << "OpenMP " << "mode selected." << endl;	
-            }
+            }else if(strcmp(input, "VECTOR") == 0){
+	      start_mode = 1;
+	      mode = Ped::IMPLEMENTATION::VECTOR;
+	      printf("Vector mode\n");
+	    }else if(strcmp(input, "CUDA") == 0){
+	      mode = Ped::IMPLEMENTATION::CUDA;
+	      printf("CUDA mode\n");
+	    }
         } else if (strcmp(&argv[i][1], "threads") == 0) {
             threads = atoi(argv[++i]);
             if (threads < 1) {
                 threads = 4;
             }
 	    cout << threads << " threads selected." << endl;      
-        }else if(strcmp(&argv[i][1], "vector") == 0){
-	  vector_mode = 1;
-	  printf("Vectors mode\n");
-	}
+        }
     } else { // Assume it is a path to scenefile
         scenefile = argv[i];
     }
@@ -67,15 +71,10 @@ int main(int argc, char*argv[]) {
   }
   
 
-  ParseScenario parser(scenefile, vector_mode);
-  model.setup(parser.getCrowds(), mode, threads);
-
+  ParseScenario parser(scenefile, start_mode);
+  model.setup(parser.getCrowds(), mode, threads);  
   QApplication app(argc, argv);
-
   MainWindow mainwindow(model);
-
-
-
 
   const int delay_ms = 100;
   Timer *timer;

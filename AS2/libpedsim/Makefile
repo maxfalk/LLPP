@@ -25,14 +25,14 @@ ifeq ($(shell which $(NVCC)),)
 $(warning Warning: Compiling without nvcc support. Compilation will proceed but CUDA code will not be included.)
 
 CXX=$(CXX_)
-CXXFLAGS = $(CXXFLAGS_) -lcudart
+CXXFLAGS = $(CXXFLAGS_)
 LDFLAGS = $(LDFLAGS_)
 OBJECTS =  $(OBJECTS_CXX)
 else 
 # Compile everything with nvcc. nvcc calls system default c++ compiler for the host code.
 # Make shared library directly with default c+++ compiler, makes format compatability more likely, and life more easy.
 CXX = $(NVCC)
-CXXFLAGS = -arch sm_30 -rdc=true --compiler-options "$(CXXFLAGS_)"
+CXXFLAGS = -lcuda -lcudart -arch sm_30 -rdc=true --compiler-options "$(CXXFLAGS_)"
 LDFLAGS = --shared #--compiler-options "$(LDFLAGS_)"
 OBJECTS =  prelinked_objects.o  $(OBJECTS_CU) $(OBJECTS_CXX)
 endif

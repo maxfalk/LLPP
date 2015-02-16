@@ -25,13 +25,20 @@ namespace Ped{
     //Methods
     void constructor();
     void init();
-    void go(int &Offset);
+    void go(int Offset);
     void where_to_go(int Offset);
     Crowd(int, int, int);
     ~Crowd();
     //Vectorized methods
-  
-      private:
+    void go_vectorized(int);
+    void where_to_go_vectorized(int Offset);
+    //Cuda
+    void cuda_free();
+    void init_cuda();
+    void go_cuda();
+    void where_to_go_cuda();
+
+  private:
     //Variables
     int mode;
     //Destination for each agent
@@ -69,10 +76,30 @@ namespace Ped{
     void set_vector_normalized_vectorized(__m128*,__m128*,__m128*,__m128*);
     void set_force_vectorized(__m128 *mTempX, __m128 *mTempY, float *mTempZ, 
 			      __m128 *X, __m128 *Y, int Offset, bool *reached);
-    void go_vectorized(int);
     void computeDirection_vectorized(int Offset);
     void setNextDestination_vectorized(int Offset);
-  
+
+
+    //cuda, device pointers
+    float *d_AgentsX;
+    float *d_AgentsY;
+    float *d_MoveForceX;
+    float *d_MoveForceY;
+    float *d_DestX;
+    float *d_DestY;
+    float *d_DestR;
+    float *d_LastDestX;
+    float *d_LastDestY;
+    float *d_LastDestR;
+    float *d_CurrWay;
+ 
+    float *d_WaypointX;
+    float *d_WaypointY;
+    float *d_WaypointR;
+    float *d_NumberOfWaypoints;
+
+
+
   };
 };
 #endif

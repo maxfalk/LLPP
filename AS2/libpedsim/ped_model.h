@@ -12,6 +12,7 @@ namespace Ped{
 	       int nrOfThreads);
     void tick();
     const std::vector<Crowd*> getCrowds() const;
+    ~Model();
   private:
     int nrOfThreads;
     IMPLEMENTATION implementation;
@@ -19,6 +20,8 @@ namespace Ped{
     void omp();
     void seq();
     void pThreads();
+    void vector();
+    void cuda();
   };
 }
 #endif
