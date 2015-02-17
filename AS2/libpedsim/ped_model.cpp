@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <omp.h>
 #include <iostream>
+#include <cuda_runtime.h>
 #include <stdio.h>
 
 std::vector<Ped::Crowd*> crowd;
@@ -119,12 +120,13 @@ void Ped::Model::vector()
 void Ped::Model::cuda(){
 
   
-  for(int i = 0; i < crowds.size(); i++){
+   for(int i = 0; i < crowds.size(); i++){
     crowds[i]->where_to_go_cuda();
     crowds[i]->go_cuda();
-   }
+    }
 
-
+  //std::cout << "Press enter to continue ...";
+  // std::cin.get(); 
 
 
 }
