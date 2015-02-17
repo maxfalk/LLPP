@@ -70,7 +70,6 @@ int main(int argc, char*argv[]) {
     i+=1;
   }
   
-
   ParseScenario parser(scenefile, start_mode);
   model.setup(parser.getCrowds(), mode, threads);  
   QApplication app(argc, argv);
