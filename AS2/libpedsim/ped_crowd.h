@@ -23,12 +23,12 @@ namespace Ped{
    
     
     //Methods
+    Crowd(int, int, int);
+    ~Crowd(); 
     void constructor();
     void init();
     void go(int Offset);
     void where_to_go(int Offset);
-    Crowd(int, int, int);
-    ~Crowd();
     //Vectorized methods
     void go_vectorized(int);
     void where_to_go_vectorized(int Offset);
@@ -46,13 +46,7 @@ namespace Ped{
     float *DestinationX;
     float *DestinationY;
     float *DestinationR;
-    
-    //Last destination for each agent
-    //Arrays
-    float *LastDestinationX;
-    float *LastDestinationY;
-    float *LastDestinationR;
-
+ 
     int NumberOfWaypoints;
     int *CurrentWaypoint;
 
@@ -64,16 +58,16 @@ namespace Ped{
 		   int Offset, bool *reached);
     float vector_dotproduct(int Agent1, int Agent2);
     float *vector_subtract(int Agent1, int Agent2);
-    float vector_length(float *X,float *Y,float *Z, int Offset);
-    float vector_length(float X,float Y,float Z);
-    void set_vector_normalized(float *X,float *Y,float *Z, int Offset);
-    void set_vector_normalized(float *X,float *Y,float *Z, 
+    float vector_length(float *X,float *Y, int Offset);
+    float vector_length(float X,float Y);
+    void set_vector_normalized(float *X,float *Y, int Offset);
+    void set_vector_normalized(float *X,float *Y, 
 			       int Offset, float len);
   
     //Vectorized
     void constructor_vector();
-    void vector_length_vectorized(__m128*,__m128*,__m128*, __m128*);
-    void set_vector_normalized_vectorized(__m128*,__m128*,__m128*,__m128*);
+    void vector_length_vectorized(__m128*,__m128*,__m128*);
+    void set_vector_normalized_vectorized(__m128*,__m128*,__m128*);
     void set_force_vectorized(__m128 *mTempX, __m128 *mTempY, float *mTempZ, 
 			      __m128 *X, __m128 *Y, int Offset, bool *reached);
     void computeDirection_vectorized(int Offset);

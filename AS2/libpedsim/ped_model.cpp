@@ -27,10 +27,7 @@ Ped::Model::~Model(){
   if(implementation == CUDA){
     for(int i = 0; i < crowds.size(); i++)
       crowds[i]->cuda_free();
-
   }
-
-
 
 }
 const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
@@ -77,13 +74,14 @@ void create_threads(Ped::Crowd* c, int nrOfThreads) {
 }
 void Ped::Model::pThreads()
 {
-
+  //Assumes two agents in xml file
     create_threads(crowds[0], nrOfThreads);
     create_threads(crowds[1], nrOfThreads);
 
 }
 void Ped::Model::omp()
 {
+  //Assumes two agents in xml file
     //OMP here
     #pragma omp parallel for
     for(int i = 0; i < crowds[0]->NumberOfAgents; i++){
@@ -118,9 +116,6 @@ void Ped::Model::cuda(){
     crowds[i]->where_to_go_cuda();
     crowds[i]->go_cuda();
     }
-
-  //std::cout << "Press enter to continue ...";
-  // std::cin.get(); 
 
 
 }

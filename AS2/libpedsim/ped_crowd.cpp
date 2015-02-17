@@ -40,11 +40,7 @@ Ped::Crowd::~Crowd(){
   delete[] DestinationX;
   delete[] DestinationY;
   delete[] DestinationR;
-  
-  delete[] LastDestinationX;
-  delete[] LastDestinationY;
-  delete[] LastDestinationR;
-  
+
   delete[] WaypointX;
   delete[] WaypointY;
   delete[] WaypointR;
@@ -68,10 +64,6 @@ void Ped::Crowd::constructor(){
   DestinationY = new float[NumberOfAgents];
   DestinationR = new float[NumberOfAgents];
 
-  LastDestinationX = new float[NumberOfAgents];
-  LastDestinationY = new float[NumberOfAgents];
-  LastDestinationR = new float[NumberOfAgents];
-
   WaypointX = new float[NumberOfWaypoints];
   WaypointY = new float[NumberOfWaypoints];
   WaypointR = new float[NumberOfWaypoints];
@@ -92,9 +84,6 @@ void Ped::Crowd::constructor_vector(){
   vector_alloc((void **)&DestinationY, NumberOfAgents);
   vector_alloc((void **)&DestinationR, NumberOfAgents);
    
-  vector_alloc((void **)&LastDestinationX, NumberOfAgents);
-  vector_alloc((void **)&LastDestinationY, NumberOfAgents);
-  vector_alloc((void **)&LastDestinationR, NumberOfAgents);
 
   vector_alloc((void **)&WaypointX, NumberOfWaypoints);
   vector_alloc((void **)&WaypointY, NumberOfWaypoints);
@@ -104,7 +93,7 @@ void Ped::Crowd::constructor_vector(){
 
 }
 void Ped::Crowd::init(){
-  printf("Setting destionations\n");
+
   for(int i = 0; i < NumberOfAgents; i++){
     CurrentWaypoint[i] = 0;
 
@@ -135,7 +124,7 @@ void Ped::Crowd::go(int Offset){
 void Ped::Crowd::where_to_go(int Offset){
  
   computeDirection(Offset);
-  set_vector_normalized(MoveForceX, MoveForceY, MoveForceZ, Offset);
+  set_vector_normalized(MoveForceX, MoveForceY,  Offset);
  
 }
 void Ped::Crowd::setNextDestination(int Offset) {
@@ -162,11 +151,7 @@ void Ped::Crowd::computeDirection(int Offset) {
   
   
     if (reachesDestination == true) {
-      
-      LastDestinationX[Offset] = DestinationX[Offset];
-      LastDestinationY[Offset] = DestinationY[Offset];
-      LastDestinationR[Offset] = DestinationR[Offset];
-      
+
       setNextDestination(Offset);
     }
   
@@ -178,58 +163,51 @@ void Ped::Crowd::set_force(float *temp, float *X, float *Y,
   float diff[3];
   diff[0] = temp[0] - X[Offset];
   diff[1] = temp[1] - Y[Offset];
-  diff[2] = 0;
-  float len = vector_length(diff[0], diff[1], diff[2]);
+  float len = vector_length(diff[0], diff[1]);
   if(len < temp[2])
     *reached = true;
   else
     *reached = false;
 
-  set_vector_normalized(&diff[0], &diff[1], &diff[2], 0, len);
+  set_vector_normalized(&diff[0], &diff[1],  0, len);
   //Update MoveForce
   MoveForceX[Offset] = diff[0];
   MoveForceY[Offset] = diff[1];
-  MoveForceZ[Offset] = diff[2];
+
    
 
 }
-float Ped::Crowd::vector_length(float *X,float *Y,float *Z, int Offset){
+float Ped::Crowd::vector_length(float *X,float *Y, int Offset){
   return sqrt(X[Offset]*X[Offset]+
-	      Y[Offset]*Y[Offset]+
-	      Z[Offset]*Z[Offset]);
+	      Y[Offset]*Y[Offset]);
   
 }
-float Ped::Crowd::vector_length(float X,float Y,float Z){
+float Ped::Crowd::vector_length(float X,float Y){
   return sqrt(X*X+
-	      Y*Y+
-	      Z*Z);
+	      Y*Y);
   
 }
-void Ped::Crowd::set_vector_normalized(float *X,float *Y,float *Z, 
+void Ped::Crowd::set_vector_normalized(float *X,float *Y,
 				       int Offset){
-  float len = vector_length(X,Y,Z,Offset);
+  float len = vector_length(X,Y,Offset);
   if (len != 0){
     X[Offset] /= len; 
     Y[Offset] /= len; 
-    Z[Offset] /= len; 
   }else{
     X[Offset] = 0; 
     Y[Offset] = 0; 
-    Z[Offset] = 0; 
 
   }
 
 }
-void Ped::Crowd::set_vector_normalized(float *X,float *Y,float *Z, 
+void Ped::Crowd::set_vector_normalized(float *X,float *Y,
 				       int Offset, float len){
   if (len != 0){
     X[Offset] /= len; 
     Y[Offset] /= len; 
-    Z[Offset] /= len; 
   }else{
     X[Offset] = 0; 
     Y[Offset] = 0; 
-    Z[Offset] = 0; 
 
   }
 
@@ -239,6 +217,7 @@ void Ped::Crowd::set_vector_normalized(float *X,float *Y,float *Z,
 void Ped::Crowd::go_vectorized(int Offset){
   //Assumes mulitples of 4 agents
  /*
+   can't "vector round" with SEE need SEE4.1 for round
   __m128 *mAgentsX = (__m128 *) &AgentsX[Offset]; 
   __m128 *mAgentsY = (__m128 *) &AgentsY[Offset]; 
   __m128 *mMoveForceX = (__m128 *) &MoveForceX[Offset]; 
@@ -258,17 +237,16 @@ void Ped::Crowd::where_to_go_vectorized(int Offset){
   //Assumes mulitples of 4 agents
   __m128 *mMoveForceX = (__m128 *) &MoveForceX[Offset];
   __m128 *mMoveForceY = (__m128 *) &MoveForceY[Offset];
-  __m128 *mMoveForceZ = (__m128 *) &MoveForceZ[Offset];
   __m128 mLength;
   
   computeDirection_vectorized(Offset);
-  vector_length_vectorized(mMoveForceX,mMoveForceY, mMoveForceZ, &mLength);
-  set_vector_normalized_vectorized(mMoveForceX,mMoveForceY, mMoveForceZ,
+  vector_length_vectorized(mMoveForceX,mMoveForceY, &mLength);
+  set_vector_normalized_vectorized(mMoveForceX,mMoveForceY,
 				   &mLength);
   
 }
 void Ped::Crowd::setNextDestination_vectorized(int Offset) {
-  
+  //Not used atm
   __m128 *mCuWay = (__m128 *) &CurrentWaypoint[Offset];
   __m128 mAdd1 = _mm_set1_ps(1.0f);
   *mCuWay = _mm_add_ps(*mCuWay, mAdd1);
@@ -308,10 +286,6 @@ void Ped::Crowd::computeDirection_vectorized(int Offset) {
   for(int i = 0; i < ELEMINTS_IN_XXAM; i++){
     if (reachesDestination[i] == true) {
       
-      LastDestinationX[Offset+i] = DestinationX[Offset+i];
-      LastDestinationY[Offset+i] = DestinationY[Offset+i];
-      LastDestinationR[Offset+i] = DestinationR[Offset+i];
-      
       setNextDestination(Offset+i);
     }
   }
@@ -326,8 +300,7 @@ void Ped::Crowd::set_force_vectorized(__m128 *mTempX, __m128 *mTempY, float *Tem
 
   __m128 diffX = _mm_sub_ps(*mTempX, *mX);
   __m128 diffY = _mm_sub_ps(*mTempY, *mY);
-  __m128 diffZ = _mm_set1_ps(0);
-  vector_length_vectorized(&diffX, &diffY, &diffZ , ((__m128*)&lengths));
+  vector_length_vectorized(&diffX, &diffY, ((__m128*)&lengths));
   __m128 *mlengths = (__m128 *) lengths;    
 
   //Check which vectors have arrived at dest
@@ -338,37 +311,34 @@ void Ped::Crowd::set_force_vectorized(__m128 *mTempX, __m128 *mTempY, float *Tem
       reached[i] = false;
   }
 
-  set_vector_normalized_vectorized(&diffX, &diffY, &diffZ, mlengths);
+  set_vector_normalized_vectorized(&diffX, &diffY, mlengths);
   //Update MoveForce
   _mm_store_ps(&MoveForceX[Offset],diffX);
   _mm_store_ps(&MoveForceY[Offset],diffY);
-  _mm_store_ps(&MoveForceZ[Offset],diffZ);
   
 
 
 }
 
 void Ped::Crowd::set_vector_normalized_vectorized(__m128 *mX, __m128 *mY,
-						  __m128 *mZ, __m128 *len){
+						   __m128 *len){
   //What happens with division by zero?
   *mX = _mm_div_ps(*mX,*len);
   *mY = _mm_div_ps(*mY,*len);
-  *mZ = _mm_div_ps(*mZ,*len); 
+
 
 }
-void Ped::Crowd::vector_length_vectorized(__m128 *mX, __m128 *mY, __m128 *mZ, __m128 *lengths){
+void Ped::Crowd::vector_length_vectorized(__m128 *mX, __m128 *mY,  __m128 *lengths){
 
-  *lengths = _mm_sqrt_ps(_mm_add_ps( _mm_add_ps(
-						_mm_mul_ps(*mX,*mX),
-						_mm_mul_ps(*mY,*mY)),
-				     _mm_mul_ps(*mZ,*mZ)));
+  *lengths = _mm_sqrt_ps(_mm_add_ps(_mm_mul_ps(*mX,*mX),
+				    _mm_mul_ps(*mY,*mY))
+				     );
 			  
   
 }
 /*-------------Cuda----------------------*/
 void Ped::Crowd::init_cuda(){
 
-  printf("Cuda init!\n");
   int size = NumberOfAgents * sizeof(float);
   int waypointSize = NumberOfWaypoints * sizeof(float);
   
@@ -404,14 +374,6 @@ void Ped::Crowd::init_cuda(){
   cudaMemcpy(d_WaypointY, WaypointY, waypointSize, cudaMemcpyHostToDevice);
   cudaMemcpy(d_WaypointR, WaypointR, waypointSize, cudaMemcpyHostToDevice);
 
-  for(int i =0; i < NumberOfWaypoints;i++){
-    printf("Waypoint HOST x.y.r: %f, %f ,%f\n", WaypointX[i], WaypointY[i], WaypointR[i]);
-
-  }
- 
-
- 
-  printf("NUM: %d\n", NumberOfWaypoints);
   cudaMemcpy(d_NumberOfWaypoints, &NumberOfWaypoints, sizeof(int), 
 	     cudaMemcpyHostToDevice);
 
@@ -438,7 +400,7 @@ void Ped::Crowd::cuda_free(){
 void Ped::Crowd::go_cuda(){
 
   int size = NumberOfAgents * sizeof(float);
-  int threadsPerBlock = 200;
+  int threadsPerBlock = 200; //Needs to be a multiple of 4,a multiple of NumOfAgents.
   int blocksPerGrid = NumberOfAgents / threadsPerBlock;
 
   kernel_go(blocksPerGrid, threadsPerBlock,
@@ -450,7 +412,7 @@ void Ped::Crowd::go_cuda(){
 }
 void Ped::Crowd::where_to_go_cuda(){ 
  
-  int threadsPerBlock = 200;
+  int threadsPerBlock = 200; //Needs to be a multiple of 4,a multiple od NumOfAgents.
   int blocksPerGrid = NumberOfAgents / threadsPerBlock;
 
   kernel_wtg(blocksPerGrid, threadsPerBlock,
