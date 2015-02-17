@@ -59,51 +59,48 @@ void Ped::Model::seq()
    }
 
 }
-void create_threads(int nrOfThreads) {
-    pthread_t threads[nrOfThreads];
-    for (int i=0; i<nrOfThreads; i++) {
+void create_threads(int in_nrOfThreads) {
+    pthread_t threads[in_nrOfThreads];
+    //Assumes same size agents
+    for (int i=0; i<in_nrOfThreads; i++) {
         int *indices = (int *) malloc(2*sizeof(int));
-        indices[0] = (crowd[0]->NumberOfAgents/nrOfThreads)*i;
-        if (nrOfThreads-i == 1) {
+        indices[0] = (crowd[0]->NumberOfAgents/in_nrOfThreads)*i;
+        if (in_nrOfThreads-i == 1) {
             indices[1] = crowd[0]->NumberOfAgents;
         } else {
-            indices[1] = (crowd[0]->NumberOfAgents/nrOfThreads)*(i+1);
+            indices[1] = (crowd[0]->NumberOfAgents/in_nrOfThreads)*(i+1);
         }
         pthread_create(&threads[i], NULL, threaded_tick, (void *) indices);
     }
-    for (int i = 0; i < nrOfThreads; i++) {
+    for (int i = 0; i < in_nrOfThreads; i++) {
       pthread_join(threads[i], NULL);
     }
 }
 void Ped::Model::pThreads()
 {
-<<<<<<< HEAD
-  //Assumes two agents in xml file
-    create_threads(crowds[0], nrOfThreads);
-    create_threads(crowds[1], nrOfThreads);
-=======
-    // for (int i = 0; i < crowds.size(); i++) {
-  // std::cout << nrOfThreads << std::endl;
-  create_threads(nrOfThreads);
-    // } 
->>>>>>> f32f82e0df09e226571fb5f90cb2b902bbfc399b
+
+  if(crowd[0]->NumberOfAgents > 100){
+    create_threads(nrOfThreads);
+  }else{
+    create_threads(1);
+  }
+
+
 
 }
 void Ped::Model::omp()
 {
-<<<<<<< HEAD
-  //Assumes two agents in xml file
-=======
+
     omp_set_dynamic(0);
     omp_set_num_threads(nrOfThreads);
->>>>>>> f32f82e0df09e226571fb5f90cb2b902bbfc399b
+
     //OMP here
-    #pragma omp parallel for
+#pragma omp parallel for 
     for(int i = 0; i < crowds[0]->NumberOfAgents; i++){
         crowds[0]->where_to_go(i);
         crowds[0]->go(i);
     }
-    #pragma omp parallel for
+#pragma omp parallel for 
     for(int i = 0; i < crowds[1]->NumberOfAgents; i++){
         crowds[1]->where_to_go(i);
         crowds[1]->go(i);
