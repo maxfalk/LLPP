@@ -54,8 +54,7 @@ int main(int argc, char*argv[]) {
             threads = atoi(argv[++i]);
             if (threads < 1) {
                 threads = 4;
-            }
-	    cout << threads << " threads selected." << endl;      
+            }     
         }else if(strcmp(&argv[i][1], "vector") == 0){
 	  vector_mode = 1;
 	  printf("Vectors mode\n");
@@ -66,7 +65,7 @@ int main(int argc, char*argv[]) {
     i+=1;
   }
   
-
+  cout << threads << " threads selected." << endl; 
   ParseScenario parser(scenefile, vector_mode);
   model.setup(parser.getCrowds(), mode, threads);
 

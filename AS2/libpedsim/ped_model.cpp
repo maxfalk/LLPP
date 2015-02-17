@@ -26,11 +26,11 @@ void *threaded_tick(void *inds) {
     int *indices = (int *) inds;
     int startIndex = indices[0];
     int stopIndex = indices[1];
-    for (int i=startIndex; i<stopIndex; i++) {
-        crowd[0]->where_to_go(i);
-        crowd[0]->go(i);
-        crowd[1]->where_to_go(i);
-        crowd[1]->go(i);
+    for (int i = 0; i < crowd.size(); i++) {
+      for (int j = startIndex; j < stopIndex; j++) {
+        crowd[i]->where_to_go(j);
+        crowd[i]->go(j);
+      }
     }
 }
 void Ped::Model::seq()
@@ -45,28 +45,34 @@ void Ped::Model::seq()
    }
 
 }
-void create_threads(Ped::Crowd* c, int nrOfThreads) {
+void create_threads(int nrOfThreads) {
     pthread_t threads[nrOfThreads];
     for (int i=0; i<nrOfThreads; i++) {
         int *indices = (int *) malloc(2*sizeof(int));
-        indices[0] = (c->NumberOfAgents/nrOfThreads)*i;
+        indices[0] = (crowd[0]->NumberOfAgents/nrOfThreads)*i;
         if (nrOfThreads-i == 1) {
-            indices[1] = c->NumberOfAgents;
+            indices[1] = crowd[0]->NumberOfAgents;
         } else {
-            indices[1] = (c->NumberOfAgents/nrOfThreads)*(i+1);
+            indices[1] = (crowd[0]->NumberOfAgents/nrOfThreads)*(i+1);
         }
         pthread_create(&threads[i], NULL, threaded_tick, (void *) indices);
+    }
+    for (int i = 0; i < nrOfThreads; i++) {
+      pthread_join(threads[i], NULL);
     }
 }
 void Ped::Model::pThreads()
 {
-
-    create_threads(crowds[0], nrOfThreads);
-    create_threads(crowds[1], nrOfThreads);
+    // for (int i = 0; i < crowds.size(); i++) {
+  // std::cout << nrOfThreads << std::endl;
+  create_threads(nrOfThreads);
+    // } 
 
 }
 void Ped::Model::omp()
 {
+    omp_set_dynamic(0);
+    omp_set_num_threads(nrOfThreads);
     //OMP here
     #pragma omp parallel for
     for(int i = 0; i < crowds[0]->NumberOfAgents; i++){
