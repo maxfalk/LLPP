@@ -55,7 +55,6 @@ int main(int argc, char*argv[]) {
 	      printf("Vector mode\n");
 	    }else if(strcmp(input, "CUDA") == 0){
 	      mode = Ped::IMPLEMENTATION::CUDA;
-	      start_mode = 1;
 	      printf("CUDA mode\n");
 	    }
         } else if (strcmp(&argv[i][1], "threads") == 0) {

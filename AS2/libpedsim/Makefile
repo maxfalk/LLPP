@@ -32,7 +32,7 @@ else
 # Compile everything with nvcc. nvcc calls system default c++ compiler for the host code.
 # Make shared library directly with default c+++ compiler, makes format compatability more likely, and life more easy.
 CXX = $(NVCC)
-CXXFLAGS = -lcuda -lcudart -arch sm_30 -rdc=true --compiler-options "$(CXXFLAGS_)"
+CXXFLAGS = -lcuda -lcudart -arch=sm_21 -rdc=true --compiler-options "$(CXXFLAGS_)"
 LDFLAGS = --shared #--compiler-options "$(LDFLAGS_)"
 OBJECTS =  prelinked_objects.o  $(OBJECTS_CU) $(OBJECTS_CXX)
 endif
@@ -51,7 +51,7 @@ libpedsim.so: $(OBJECTS)
 # We need to do some linking beforehand, so that non-cuda compilers can link to the lib
 # If the program were using nvcc, this step would be unneccesary
 prelinked_objects.o:  $(OBJECTS_CU) $(OBJECTS_CXX)
-	$(NVCC) $(CXXFLAGS) -dlink  $(OBJECTS_CU) $(OBJECTS_CXX) -o $@
+	$(NVCC) $(CXXFLAGS) -dlink $(OBJECTS_CU) $(OBJECTS_CXX) -o $@
 
 # This removes a circular dependency from implicit make rules.
 %.cu:

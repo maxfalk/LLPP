@@ -88,15 +88,12 @@ namespace Ped{
     float *d_DestX;
     float *d_DestY;
     float *d_DestR;
-    float *d_LastDestX;
-    float *d_LastDestY;
-    float *d_LastDestR;
-    float *d_CurrWay;
+    int *d_CurrWay;
  
     float *d_WaypointX;
     float *d_WaypointY;
     float *d_WaypointR;
-    float *d_NumberOfWaypoints;
+    int *d_NumberOfWaypoints;
 
 
 

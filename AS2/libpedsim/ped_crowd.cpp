@@ -104,7 +104,7 @@ void Ped::Crowd::constructor_vector(){
 
 }
 void Ped::Crowd::init(){
-
+  printf("Setting destionations\n");
   for(int i = 0; i < NumberOfAgents; i++){
     CurrentWaypoint[i] = 0;
 
@@ -112,6 +112,7 @@ void Ped::Crowd::init(){
     DestinationY[i] = WaypointY[CurrentWaypoint[i]];
     DestinationR[i] = WaypointR[CurrentWaypoint[i]];
   }
+
 
 }
 
@@ -379,15 +380,13 @@ void Ped::Crowd::init_cuda(){
   cudaMalloc(&d_DestX, size);
   cudaMalloc(&d_DestY, size);
   cudaMalloc(&d_DestR, size);
-  cudaMalloc(&d_LastDestX, size);
-  cudaMalloc(&d_LastDestY, size);
-  cudaMalloc(&d_LastDestR, size);
-  cudaMalloc(&d_CurrWay, size);
+  cudaMalloc(&d_CurrWay, NumberOfAgents*sizeof(int));
 
   cudaMalloc(&d_WaypointX, waypointSize);
   cudaMalloc(&d_WaypointY, waypointSize);
   cudaMalloc(&d_WaypointR, waypointSize); 
-
+  cudaMalloc(&d_NumberOfWaypoints, sizeof(int)); 
+  //Copy
   cudaMemcpy(d_AgentsX, AgentsX, size, cudaMemcpyHostToDevice);
   cudaMemcpy(d_AgentsY, AgentsY, size, cudaMemcpyHostToDevice);
   cudaMemcpy(d_MoveForceX, MoveForceX, size, cudaMemcpyHostToDevice);
@@ -396,18 +395,23 @@ void Ped::Crowd::init_cuda(){
   cudaMemcpy(d_DestX, DestinationX, size, cudaMemcpyHostToDevice);
   cudaMemcpy(d_DestY, DestinationY, size, cudaMemcpyHostToDevice);
   cudaMemcpy(d_DestR, DestinationR, size, cudaMemcpyHostToDevice);
+ 
+ 
+  cudaMemcpy(d_CurrWay, CurrentWaypoint, NumberOfAgents*sizeof(int), 
+	     cudaMemcpyHostToDevice);
   
-  cudaMemcpy(d_LastDestX, LastDestinationX, size, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_LastDestY, LastDestinationY, size, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_LastDestR, LastDestinationR, size, cudaMemcpyHostToDevice);
-  
-  cudaMemcpy(d_CurrWay, CurrentWaypoint, size, cudaMemcpyHostToDevice);
-  
-
   cudaMemcpy(d_WaypointX, WaypointX, waypointSize, cudaMemcpyHostToDevice);
   cudaMemcpy(d_WaypointY, WaypointY, waypointSize, cudaMemcpyHostToDevice);
   cudaMemcpy(d_WaypointR, WaypointR, waypointSize, cudaMemcpyHostToDevice);
-  
+
+  for(int i =0; i < NumberOfWaypoints;i++){
+    printf("Waypoint HOST x.y.r: %f, %f ,%f\n", WaypointX[i], WaypointY[i], WaypointR[i]);
+
+  }
+ 
+
+ 
+  printf("NUM: %d\n", NumberOfWaypoints);
   cudaMemcpy(d_NumberOfWaypoints, &NumberOfWaypoints, sizeof(int), 
 	     cudaMemcpyHostToDevice);
 
@@ -423,9 +427,6 @@ void Ped::Crowd::cuda_free(){
   cudaFree(d_DestX);
   cudaFree(d_DestY);
   cudaFree(d_DestR);
-  cudaFree(d_LastDestX);
-  cudaFree(d_LastDestY);
-  cudaFree(d_LastDestR);
   cudaFree(d_CurrWay);
 
   cudaFree(d_WaypointX);
@@ -437,27 +438,25 @@ void Ped::Crowd::cuda_free(){
 void Ped::Crowd::go_cuda(){
 
   int size = NumberOfAgents * sizeof(float);
-  int threadsPerBlock = 256;
-  int blocksPerGrid = NumberOfAgents / (threadsPerBlock - 1);
+  int threadsPerBlock = 200;
+  int blocksPerGrid = NumberOfAgents / threadsPerBlock;
 
   kernel_go(blocksPerGrid, threadsPerBlock,
 	    d_AgentsX, d_MoveForceX,
 	    d_AgentsY, d_MoveForceY);
-
+ 
   cudaMemcpy(AgentsX, d_AgentsX, size, cudaMemcpyDeviceToHost);
   cudaMemcpy(AgentsY, d_AgentsY, size, cudaMemcpyDeviceToHost);
-
 }
 void Ped::Crowd::where_to_go_cuda(){ 
  
-  int threadsPerBlock = 256;
+  int threadsPerBlock = 200;
   int blocksPerGrid = NumberOfAgents / threadsPerBlock;
 
   kernel_wtg(blocksPerGrid, threadsPerBlock,
 	     d_DestX, d_DestY,
 	     d_DestR, d_AgentsX, 
-	     d_AgentsY, d_LastDestX,
-	     d_LastDestY, d_LastDestR,
+	     d_AgentsY,
 	     d_MoveForceX, d_MoveForceY,
 	     d_CurrWay,
 	     d_WaypointX, d_WaypointY,
