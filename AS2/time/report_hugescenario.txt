@@ -1,0 +1,12 @@
+SEQ;VECTOR;CUDA;OMP 2;PTHREAD 2;OMP 3;PTHREAD 3;OMP 4;PTHREAD 4;
+Time: 0.553577 seconds.
+Time: 0.260668 seconds.
+Time: 0.0383276 seconds.
+Time: 0.262353 seconds.
+Time: 0.28449 seconds.
+Time: 0.191756 seconds.
+Time: 0.194963 seconds.
+Time: 0.270638 seconds.
+Time: 0.235027 seconds.
+
+Time: 0.58387 seconds.

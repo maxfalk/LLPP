@@ -412,7 +412,7 @@ void Ped::Crowd::go_cuda(){
 }
 void Ped::Crowd::where_to_go_cuda(){ 
  
-  int threadsPerBlock = 200; //Needs to be a multiple of 4,a multiple od NumOfAgents.
+  int threadsPerBlock = 200; //Needs to be a multiple of 4,a multiple of NumOfAgents.
   int blocksPerGrid = NumberOfAgents / threadsPerBlock;
 
   kernel_wtg(blocksPerGrid, threadsPerBlock,

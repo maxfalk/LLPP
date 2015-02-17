@@ -59,53 +59,42 @@ void Ped::Model::seq()
    }
 
 }
-void create_threads(int in_nrOfThreads) {
-    pthread_t threads[in_nrOfThreads];
-    //Assumes same size agents
-    for (int i=0; i<in_nrOfThreads; i++) {
-        int *indices = (int *) malloc(2*sizeof(int));
-        indices[0] = (crowd[0]->NumberOfAgents/in_nrOfThreads)*i;
-        if (in_nrOfThreads-i == 1) {
-            indices[1] = crowd[0]->NumberOfAgents;
-        } else {
-            indices[1] = (crowd[0]->NumberOfAgents/in_nrOfThreads)*(i+1);
-        }
-        pthread_create(&threads[i], NULL, threaded_tick, (void *) indices);
+void create_threads(int nrOfThreads) {
+  pthread_t threads[nrOfThreads];
+  for (int i=0; i<nrOfThreads; i++) {
+    int *indices = (int *) malloc(2*sizeof(int));
+    indices[0] = (crowd[0]->NumberOfAgents/nrOfThreads)*i;
+    if (nrOfThreads-i == 1) {
+      indices[1] = crowd[0]->NumberOfAgents;
+    } else {
+      indices[1] = (crowd[0]->NumberOfAgents/nrOfThreads)*(i+1);
     }
-    for (int i = 0; i < in_nrOfThreads; i++) {
-      pthread_join(threads[i], NULL);
-    }
+    pthread_create(&threads[i], NULL, threaded_tick, (void *) indices);
+  }
+  for (int i = 0; i < nrOfThreads; i++) {
+    pthread_join(threads[i], NULL);
+  }
 }
 void Ped::Model::pThreads()
 {
-
-  if(crowd[0]->NumberOfAgents > 100){
-    create_threads(nrOfThreads);
-  }else{
-    create_threads(1);
-  }
-
-
-
+  create_threads(nrOfThreads);
+  
 }
 void Ped::Model::omp()
 {
-
-    omp_set_dynamic(0);
-    omp_set_num_threads(nrOfThreads);
-
-    //OMP here
-#pragma omp parallel for 
-    for(int i = 0; i < crowds[0]->NumberOfAgents; i++){
-        crowds[0]->where_to_go(i);
-        crowds[0]->go(i);
-    }
-#pragma omp parallel for 
-    for(int i = 0; i < crowds[1]->NumberOfAgents; i++){
-        crowds[1]->where_to_go(i);
-        crowds[1]->go(i);
-    }
-
+  omp_set_dynamic(0);
+  omp_set_num_threads(nrOfThreads);
+  //OMP here
+#pragma omp parallel for
+  for(int i = 0; i < crowds[0]->NumberOfAgents; i++){
+    crowds[0]->where_to_go(i);
+crowds[0]->go(i);
+  }
+#pragma omp parallel for
+  for(int i = 0; i < crowds[1]->NumberOfAgents; i++){
+    crowds[1]->where_to_go(i);
+    crowds[1]->go(i);
+  }
 }
 void Ped::Model::vector()
 {
@@ -118,16 +107,14 @@ void Ped::Model::vector()
     }
    }
 
-
-
 }
 void Ped::Model::cuda(){
 
   
-   for(int i = 0; i < crowds.size(); i++){
+  for(int i = 0; i < crowds.size(); i++){
     crowds[i]->where_to_go_cuda();
     crowds[i]->go_cuda();
-    }
+  }
 
 
 }

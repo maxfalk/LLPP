@@ -78,7 +78,7 @@ int main(int argc, char*argv[]) {
 
   const int delay_ms = 100;
   Timer *timer;
-#define TICK_LIMIT 10000
+#define TICK_LIMIT 1000
 #define AS_FAST_AS_POSSIBLE 0
   if(timing_mode)
     {
@@ -89,7 +89,7 @@ int main(int argc, char*argv[]) {
     {
     timer = new Timer(model,mainwindow,delay_ms);
     mainwindow.show();
-    
+   
   }
   cout << "Demo setup complete, running ..." << endl;
   int retval = 0;
