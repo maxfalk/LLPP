@@ -32,6 +32,10 @@ Ped::Crowd::~Crowd(){
   delete[] AgentsX;
   delete[] AgentsY;
   delete[] AgentsZ;
+
+  delete[] DesiredX;
+  delete[] DesiredY;
+  delete[] DesiredZ;
   
   delete[] MoveForceX;
   delete[] MoveForceY;
@@ -56,6 +60,10 @@ void Ped::Crowd::constructor(){
   AgentsY = new float[NumberOfAgents];
   AgentsZ = new float[NumberOfAgents];
 
+  DesiredX = new float[NumberOfAgents]
+  DesiredY = new float[NumberOfAgents]
+  DesiredZ = new float[NumberOfAgents]
+
   MoveForceX = new float[NumberOfAgents];
   MoveForceY = new float[NumberOfAgents];
   MoveForceZ = new float[NumberOfAgents];
@@ -75,6 +83,10 @@ void Ped::Crowd::constructor_vector(){
   vector_alloc((void **)&AgentsX, NumberOfAgents);
   vector_alloc((void **)&AgentsY, NumberOfAgents);
   vector_alloc((void **)&AgentsZ, NumberOfAgents);
+
+  vector_alloc((void **)&DesiredX, NumberOfAgents);
+  vector_alloc((void **)&DesiredY, NumberOfAgents);
+  vector_alloc((void **)&DesiredZ, NumberOfAgents);
    
   vector_alloc((void **)&MoveForceX, NumberOfAgents);
   vector_alloc((void **)&MoveForceY, NumberOfAgents);
@@ -117,8 +129,8 @@ void Ped::Crowd::vector_alloc(void **memptr, int NumberOfFloats){
 }
 void Ped::Crowd::go(int Offset){
 
-  AgentsX[Offset] = round(AgentsX[Offset] + MoveForceX[Offset]);
-  AgentsY[Offset] = round(AgentsY[Offset] + MoveForceY[Offset]);
+  DesiredX[Offset] = round(AgentsX[Offset] + MoveForceX[Offset]);
+  DesiredY[Offset] = round(AgentsY[Offset] + MoveForceY[Offset]);
 
 }
 void Ped::Crowd::where_to_go(int Offset){
@@ -226,8 +238,8 @@ void Ped::Crowd::go_vectorized(int Offset){
   *mAgentsY = _mm_add_ps(*mAgentsY, *mMoveForceY);
   */
   for(int i = 0; i<ELEMINTS_IN_XXAM; i++){
-    AgentsX[Offset+i] = round(AgentsX[Offset+i] + MoveForceX[Offset+i]);
-    AgentsY[Offset+i] = round(AgentsY[Offset+i] + MoveForceY[Offset+i]);
+    DesiredX[Offset+i] = round(AgentsX[Offset+i] + MoveForceX[Offset+i]);
+    DesiredY[Offset+i] = round(AgentsY[Offset+i] + MoveForceY[Offset+i]);
 
   }
 
