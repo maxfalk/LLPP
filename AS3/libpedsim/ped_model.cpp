@@ -11,10 +11,6 @@
 
 std::vector<Ped::Crowd*> crowd;
 
-bool cmp(Ped::Tagent *a, Ped::Tagent *b) {
-  return (a->getX() < b->getX()) || ((a->getX() == b->getX()) && (a->getY() < b->getY()));
-}
-
 void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION _mode, int _nrOfThreads)
 {
     nrOfThreads = _nrOfThreads;
