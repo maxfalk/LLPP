@@ -16,29 +16,29 @@
 #include <list>
 
 #include "ped_model.h"
-#include "ped_agent.h"
+//#include "ped_agent.h"
 
 using namespace std;
 
 namespace Ped {
-    class Tagent;
     class Model;
+    class Crowd;
 
     class LIBEXPORT Ttree {
       friend class Ped::Model;
 
     public:
-      Ttree(Ped::Ttree *root, std::map<const Ped::Tagent*, Ped::Ttree*> *treehash, int depth, int maxDepth, double x, double y, double w, double h);
+      Ttree(Ped::Ttree *root, std::map<const int, Ped::Ttree*> *treehash, int depth, int maxDepth, double x, double y, double w, double h);
         virtual ~Ttree();
 
         virtual void clear();
 
-        virtual void addAgent(const Ped::Tagent *a);
-        virtual void moveAgent(const Ped::Tagent *a);
-        virtual bool removeAgent(const Ped::Tagent *a);
+        virtual void addAgent(const int offset);
+        virtual void moveAgent(const int offset);
+        virtual bool removeAgent(const int offset);
 
-        virtual set<const Ped::Tagent*> getAgents() const;
-        virtual void getAgents(list<const Ped::Tagent*>& outputList) const;
+        virtual set<const int> getAgents() const;
+        virtual void getAgents(list<const int>& outputList) const;
 
         virtual bool intersects(double px, double py, double pr) const;
 
@@ -54,8 +54,8 @@ namespace Ped {
         Ttree* getChildByPosition(double x, double y);
 	int cut();
     protected:
-        std::map<const Ped::Tagent*, Ped::Ttree*> *treehash;
-        set<const Ped::Tagent*> agents;	// set and not vector, since we need to delete elements from the middle very often
+        std::map<const int, Ped::Ttree*> *treehash;
+        //set<const int> agents;	// set and not vector, since we need to delete elements from the middle very often
                                         // set and not list, since deletion is based on pointer (search O(log n) instead of O(n)).
 
         bool isleaf;

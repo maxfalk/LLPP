@@ -3,12 +3,10 @@
 #include <vector>
 #include <map>
 #include "ped_crowd.h"
-
 #include "ped_tree.h"
-#include "ped_agent.h"
+//#include "ped_agent.h"
 
 namespace Ped{
-  class Tagent;
   class Ttree;
 
   enum IMPLEMENTATION {CUDA, VECTOR, OMP, PTHREAD, SEQ};
@@ -21,14 +19,14 @@ namespace Ped{
     const std::vector<Crowd*> getCrowds() const;
 
     // Updates the treehash, which maps each agent to the current tree node that contains it
-    void setResponsibleTree(Ped::Ttree *tree, const Ped::Tagent *agent);
+    void setResponsibleTree(Ped::Ttree *tree, const int offset);
 
    
     // Adds an agent to the tree structure
-    void placeAgent(const Ped::Tagent *a);
+    void placeAgent(const int offset);
 
     void cleanup();
-    ~Model();
+    //~Model();
   private:
     int nrOfThreads;
     IMPLEMENTATION implementation;
@@ -39,9 +37,9 @@ namespace Ped{
     void vector();
     //void cuda();
     
-    std::vector<Tagent*> agents;
+    std::vector<int> agents;
 
-    void doSafeMovement( Ped::Tagent *agent);
+    void doSafeMovement(int offset);
     // The maximum quadtree depth
     static const int treeDepth = 10;    
 
@@ -50,11 +48,11 @@ namespace Ped{
 
     // Maps the agent to the tree node containing it. Convenience data structure
     // in order to update the tree in case the agent moves.
-    std::map<const Ped::Tagent*, Ped::Ttree*> *treehash;
+    std::map<const int, Ped::Ttree*> *treehash;
 
     // Returns the set of neighboring agents for the specified position
-    set<const Ped::Tagent*> getNeighbors(int x, int y, int dist) const;
-    void getNeighbors(list<const Ped::Tagent*>& neighborList, int x, int y, int d) const;
+    set<const int> getNeighbors(int x, int y, int dist) const;
+    void getNeighbors(list<const int>& neighborList, int x, int y, int d) const;
   };
 }
 #endif

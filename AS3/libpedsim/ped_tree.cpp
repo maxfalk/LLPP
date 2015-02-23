@@ -14,7 +14,7 @@ using namespace std;
 /// Description: set intial values
 /// \author  chgloor
 /// \date    2012-01-28
-Ped::Ttree::Ttree(Ped::Ttree *root,std::map<const Ped::Tagent*, Ped::Ttree*> *treehash, int pdepth, int pmaxDepth, double px, double py, double pw, double ph) {
+Ped::Ttree::Ttree(Ped::Ttree *root,std::map<const int, Ped::Ttree*> *treehash, int pdepth, int pmaxDepth, double px, double py, double pw, double ph) {
     // more initializations here. not really necessary to put them into the initializator list, too.
   this->root = root != NULL ? root: this;
   this->treehash = treehash;
@@ -57,8 +57,8 @@ void Ped::Ttree::clear() {
     }
 }
 
-bool cmp(const Ped::Tagent *a, const Ped::Tagent *b) {
-  return a->getX() == b->getX() && a->getY() == b->getY();
+bool cmp(const int offsetA, const int offsetB) {
+  return AgentsX[offsetA] == AgentsX[offsetB] && AgentsY[offsetA] == AgentsY[offsetB];
 }
 
 /// Adds an agent to the tree. Searches the right node and adds the agent there.
@@ -66,29 +66,29 @@ bool cmp(const Ped::Tagent *a, const Ped::Tagent *b) {
 /// \author  chgloor
 /// \date    2012-01-28
 /// \param   *a The agent to add
-void Ped::Ttree::addAgent(const Ped::Tagent *a) {
+void Ped::Ttree::addAgent(const int offset) {
     if (isleaf) {
-        agents.insert(a);
+        agents.insert(offset);
 	//model->setResponsibleTree(this, a);
-	(*treehash)[a] = this;
+	(*treehash)[offset] = this;
     }
     else {
-        if ((a->getX() >= x+w/2) && (a->getY() >= y+h/2)) tree3->addAgent(a); // 3
-        if ((a->getX() <= x+w/2) && (a->getY() <= y+h/2)) tree1->addAgent(a); // 1
-        if ((a->getX() >= x+w/2) && (a->getY() <= y+h/2)) tree2->addAgent(a); // 2
-        if ((a->getX() <= x+w/2) && (a->getY() >= y+h/2)) tree4->addAgent(a); // 4
+        if ((AgentsX[offset] >= x+w/2) && (AgentsY[offset] >= y+h/2)) tree3->addAgent(offset); // 3
+        if ((AgentsX[offset] <= x+w/2) && (AgentsY[offset] <= y+h/2)) tree1->addAgent(offset); // 1
+        if ((AgentsX[offset] >= x+w/2) && (AgentsY[offset] <= y+h/2)) tree2->addAgent(offset); // 2
+        if ((AgentsX[offset] <= x+w/2) && (AgentsY[offset] >= y+h/2)) tree4->addAgent(offset); // 4
     }
 
     if (agents.size() > 8 && depth < maxDepth) {
         isleaf = false;
         addChildren();
         while (!agents.empty()) {
-            const Ped::Tagent *a = (*agents.begin());
-            if ((a->getX() >= x+w/2) && (a->getY() >= y+h/2)) tree3->addAgent(a); // 3
-            if ((a->getX() <= x+w/2) && (a->getY() <= y+h/2)) tree1->addAgent(a); // 1
-            if ((a->getX() >= x+w/2) && (a->getY() <= y+h/2)) tree2->addAgent(a); // 2
-            if ((a->getX() <= x+w/2) && (a->getY() >= y+h/2)) tree4->addAgent(a); // 4
-            agents.erase(a);
+            const int offset = (*agents.begin());
+            if ((AgentsX[offset] >= x+w/2) && (AgentsY[offset] >= y+h/2)) tree3->addAgent(offset); // 3
+            if ((AgentsX[offset] <= x+w/2) && (AgentsY[offset] <= y+h/2)) tree1->addAgent(offset); // 1
+            if ((AgentsX[offset] >= x+w/2) && (AgentsY[offset] <= y+h/2)) tree2->addAgent(offset); // 2
+            if ((AgentsX[offset] <= x+w/2) && (AgentsY[offset] >= y+h/2)) tree4->addAgent(offset); // 4
+            agents.erase(offset);
         }
     }
 }
@@ -125,21 +125,21 @@ Ped::Ttree* Ped::Ttree::getChildByPosition(double xIn, double yIn) {
 /// \author  chgloor
 /// \date    2012-01-28
 /// \param   *a the agent to update
-void Ped::Ttree::moveAgent(const Ped::Tagent *a) {
-    if ((a->getX() < x) || (a->getX() > (x+w)) || (a->getY() < y) || (a->getY() > (y+h))) {
-        agents.erase(a);
-        root->addAgent(a);
+void Ped::Ttree::moveAgent(const int offset) {
+    if ((AgentsX[offset] < x) || (AgentsX[offset] > (x+w)) || (AgentsY[offset] < y) || (AgentsY[offset] > (y+h))) {
+        agents.erase(offset);
+        root->addAgent(offset);
     }
 }
 
 
-bool Ped::Ttree::removeAgent(const Ped::Tagent *a) {
+bool Ped::Ttree::removeAgent(const int offset) {
     if(isleaf) {
-        size_t removedCount = agents.erase(a);
+        size_t removedCount = agents.erase(offset);
         return (removedCount > 0);
     }
     else {
-        return getChildByPosition(a->getX(), a->getY())->removeAgent(a);
+        return getChildByPosition(AgentsX[offset], AgentsY[offset])->removeAgent(offset);
     }
 }
 
@@ -168,9 +168,9 @@ int Ped::Ttree::cut() {
         agents.insert(tree3->agents.begin(), tree3->agents.end());
         agents.insert(tree4->agents.begin(), tree4->agents.end());
         isleaf = true;
-        for (set<const Ped::Tagent*>::iterator it = agents.begin(); it != agents.end(); ++it) {
-            const Tagent *a = (*it);
-	    (*treehash)[a] = this;
+        for (set<const int>::iterator it = agents.begin(); it != agents.end(); ++it) {
+            const int offset = (*it);
+	    (*treehash)[offset] = this;
         }
         delete tree1;
         delete tree2;
@@ -186,15 +186,15 @@ int Ped::Ttree::cut() {
 /// \date    2012-01-28
 /// \return  The set of agents
 /// \todo This might be not very efficient, since all childs are checked, too. And then the set (set of pointer, but still) is being copied around.
-set<const Ped::Tagent*> Ped::Ttree::getAgents() const {
+set<const int> Ped::Ttree::getAgents() const {
     if (isleaf)
         return agents;
 
-    set<const Ped::Tagent*> ta;
-    set<const Ped::Tagent*> t1 = tree1->getAgents();
-    set<const Ped::Tagent*> t2 = tree2->getAgents();
-    set<const Ped::Tagent*> t3 = tree3->getAgents();
-    set<const Ped::Tagent*> t4 = tree4->getAgents();
+    set<const int> ta;
+    set<const int> t1 = tree1->getAgents();
+    set<const int> t2 = tree2->getAgents();
+    set<const int> t3 = tree3->getAgents();
+    set<const int> t4 = tree4->getAgents();
     ta.insert(t1.begin(), t1.end());
     ta.insert(t2.begin(), t2.end());
     ta.insert(t3.begin(), t3.end());
@@ -202,10 +202,10 @@ set<const Ped::Tagent*> Ped::Ttree::getAgents() const {
     return ta;
 }
 
-void Ped::Ttree::getAgents(list<const Ped::Tagent*>& outputList) const {
+void Ped::Ttree::getAgents(list<const int>& outputList) const {
     if(isleaf) {
-      for (set<const Ped::Tagent*>::iterator it = agents.begin(); it != agents.end(); ++it) {
-  	    const Ped::Tagent* currentAgent = (*it);
+      for (set<const int>::iterator it = agents.begin(); it != agents.end(); ++it) {
+  	    const int currentAgent = (*it);
             outputList.push_back(currentAgent);
       }
     }
