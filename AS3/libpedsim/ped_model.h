@@ -6,6 +6,8 @@
 #include "ped_tree.h"
 //#include "ped_agent.h"
 
+#define COL_THREADS 4
+
 namespace Ped{
   class Ttree;
 
@@ -14,7 +16,7 @@ namespace Ped{
   {
   public:
     void setup(std::vector<Crowd*> crowdsInScenario, IMPLEMENTATION mode, 
-	       int nrOfThreads);
+	       int nrOfThreads, bool parallelCollision);
     void tick();
     const std::vector<Crowd*> getCrowds() const;
 
@@ -31,6 +33,7 @@ namespace Ped{
     int nrOfThreads;
     IMPLEMENTATION implementation;
     std::vector<Crowd*> crowds;
+    bool parallelCollision;
     void omp();
     void seq();
     void pThreads();

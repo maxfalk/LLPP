@@ -112,6 +112,7 @@ int main(int argc, char*argv[]) {
   cout << "Time: " << elapsed_seconds.count() << " seconds." << endl;
 
   cout << "Done" << endl;
+  model.cleanup();
   delete (timer);
   return retval;
 }

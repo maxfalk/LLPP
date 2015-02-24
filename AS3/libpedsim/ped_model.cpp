@@ -10,13 +10,43 @@
 #include <algorithm>
 
 std::vector<Ped::Crowd*> crowd;
+bool dontKill;
+pthread_t collisionThreads[COL_THREADS];
+bool noCollisionCheck[COL_THREADS];
+bool collisionCheckNotDone[COL_THREADS];
 
-void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION _mode, int _nrOfThreads)
+typedef struct _collisionThreadData {
+  int id;
+  Ped::Ttree *tree;
+} collisionThreadData;
+
+void *checkCollisions(void *data) {
+  int id = ((collisionThreadData*) data)->id;
+  Ped::Ttree *tree = ((collisionThreadData*) data)->tree;
+  while (dontKill) {
+    while (noCollisionCheck[id]) {}
+    noCollisionCheck[id] = true;
+    std::set<pair<Ped::Crowd*,int> > agents = tree->getAgents();
+    for (auto it = agents.begin(); it != agents.end(); it++) {
+      doSafeMovementParallel(*it, tree);
+    }
+    collisionCheckNotDone[id] = false;
+  }
+  delete (collisionThreadData*) data;
+}
+
+void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION _mode, int _nrOfThreads, bool _parallelCollision)
 {
     nrOfThreads = _nrOfThreads;
     crowds = crowdInScenario;
     implementation = _mode;
+    parallelCollision = _parallelCollision;
     crowd = crowds;
+    dontKill = true;
+    for (int i = 0; i < COL_THREADS; i++) {
+      noCollisionCheck[i] = true;
+      collisionCheckNotDone[i] = true;
+    }
 
     //if(implementation == CUDA){
     //    for(int i = 0; i < crowds.size(); i++)
@@ -39,6 +69,12 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION 
     //std::cout << (*it)->getX() << " " << (*it)->getY() << std::endl;
     //tree->addAgent(*it);
     //}
+    for (int i = 0; i < COL_THREADS; i++) {
+      collisionThreadData *data =  new collisionThreadData();
+      data->id = i;
+      data->tree = trees[i]; //??
+      pthread_create(&collisionThreads[i], NULL, checkCollisions, (void*) data);
+    }
 }
 const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
 {
@@ -141,5 +177,22 @@ void Ped::Model::tick()
   }else {
     omp();
   }
+  if (parallelCollision) {
+    for (int i = 0; i < COL_THREADS; i++) {
+      noCollisionCheck[i] = false;
+    }
+    for (int i = 0; i < COL_THREADS; i++) {
+      while(collisionCheckNotDone[i]) {}
+      collisionCheckNotDone[i] = true;
+    }
+  }
 }
 
+void Ped::Model::cleanup() {
+  if (parallelCollision) {
+    dontKill = false;
+    for (int i = 0; i < COL_THREADS; i++) {
+      pthread_join(collisionThreads[i], NULL);
+    }
+  }
+}
