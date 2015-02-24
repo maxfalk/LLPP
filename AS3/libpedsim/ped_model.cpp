@@ -73,11 +73,9 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION 
   tree = new Ttree(NULL,treehash, 0, treeDepth, 0, 0, 1000, 800);
   
   //add all agents to tree
-  int agent = 0;
   for(int i = 0; i < crowds.size(); i++){
     for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
-      std::pair<Crowd*, int> Agent(crowds[i], j);
-      tree->addAgent(Agent);
+      tree->addAgent(std::make_pair(crowds[i], j));
     }
   }
   for (int i = 0; i < COL_THREADS; i++) {
@@ -111,6 +109,7 @@ void Ped::Model::seq()
     for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
       crowds[i]->where_to_go(j);
       crowds[i]->go(j);
+      doSafeMovment(std::make_pair(crowds[i],j));
       
     }
    }
@@ -215,7 +214,7 @@ std::set<std::pair<Ped::Crowd*, int> > neighbors =
   //Compute alternative ways of moving
   //Just stand still
   std::pair<int,int> altP(Agent.first->AgentsX[Agent.second], 
-			Agent.first->AgentsY[Agent.second]);
+			  Agent.first->AgentsY[Agent.second]);
 
   prioritizedAlternatives.push_back(altP);
   //Find an empty spot of the once computed to move to
@@ -234,7 +233,7 @@ std::set<std::pair<Ped::Crowd*, int> > neighbors =
       Agent.first->AgentsX[Agent.second] = prioritizedAlternatives[i].first;
       Agent.first->AgentsY[Agent.second] = prioritizedAlternatives[i].second;
       //Move agent in quadTree if necassary
-      tree->moveAgent(Agent);
+      (*treehash)[Agent]->moveAgent(Agent);
       break;
     }    
   }

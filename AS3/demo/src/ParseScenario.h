@@ -41,7 +41,7 @@ private:
   vector<float> WaypointsR;
   
 
-  bool checkForDuplicates(vector<int>, int x, int y);
+  bool checkForDuplicates(vector<float>, vector<float>, int, int);
 
   void handleWaypoint();
   void handleAgent();
