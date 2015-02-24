@@ -9,7 +9,6 @@
 #include "ped_model.h"
 #include "ped_crowd.h"
 #include "ViewAgent.h"
-#include "ped_agent.h"
 class QGraphicsView;
 
 

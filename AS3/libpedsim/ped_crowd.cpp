@@ -60,9 +60,9 @@ void Ped::Crowd::constructor(){
   AgentsY = new float[NumberOfAgents];
   AgentsZ = new float[NumberOfAgents];
 
-  DesiredX = new float[NumberOfAgents]
-  DesiredY = new float[NumberOfAgents]
-  DesiredZ = new float[NumberOfAgents]
+  DesiredX = new float[NumberOfAgents];
+  DesiredY = new float[NumberOfAgents];
+  DesiredZ = new float[NumberOfAgents];
 
   MoveForceX = new float[NumberOfAgents];
   MoveForceY = new float[NumberOfAgents];

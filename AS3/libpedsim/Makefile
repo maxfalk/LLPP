@@ -2,7 +2,7 @@
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	CXX_ = g++
-	LDFLAGS_ = -lpthread -fopenmp -shared -Wl,-soname,libpedsim.so
+	LDFLAGS_ = -std=c++11 -lpthread -fopenmp -shared -Wl,-soname,libpedsim.so
 endif
 ifeq ($(UNAME_S),Darwin)
 	CXX_ = g++-4.9
@@ -10,13 +10,13 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 NVCC = nvcc
-SOURCES_CXX = ped_crowd.cpp ped_model.cpp
+SOURCES_CXX = ped_model.cpp ped_tree.cpp ped_crowd.cpp
 OBJECTS_CXX = $(SOURCES_CXX:.cpp=.cxx.o)
 
 SOURCES_CU = tick_cuda.cu
 OBJECTS_CU = $(SOURCES_CU:.cu=.cu.o)
 
-CXXFLAGS_ = -lpthread -fopenmp -g -O3 -fno-inline -fPIC
+CXXFLAGS_ = -std=c++11 -lpthread -fopenmp -g -O3 -fno-inline -fPIC
 
 
 # Workaround to make project compile on non-cuda capable machines.
@@ -32,7 +32,7 @@ else
 # Compile everything with nvcc. nvcc calls system default c++ compiler for the host code.
 # Make shared library directly with default c+++ compiler, makes format compatability more likely, and life more easy.
 CXX = $(NVCC)
-CXXFLAGS = -lcuda -lcudart -arch=sm_21 -rdc=true --compiler-options "$(CXXFLAGS_)"
+CXXFLAGS = -arch sm_30 -rdc=true --compiler-options "$(CXXFLAGS_)"
 LDFLAGS = --shared #--compiler-options "$(LDFLAGS_)"
 OBJECTS =  prelinked_objects.o  $(OBJECTS_CU) $(OBJECTS_CXX)
 endif
@@ -51,7 +51,7 @@ libpedsim.so: $(OBJECTS)
 # We need to do some linking beforehand, so that non-cuda compilers can link to the lib
 # If the program were using nvcc, this step would be unneccesary
 prelinked_objects.o:  $(OBJECTS_CU) $(OBJECTS_CXX)
-	$(NVCC) $(CXXFLAGS) -dlink $(OBJECTS_CU) $(OBJECTS_CXX) -o $@
+	$(NVCC) $(CXXFLAGS) -dlink  $(OBJECTS_CU) $(OBJECTS_CXX) -o $@
 
 # This removes a circular dependency from implicit make rules.
 %.cu:

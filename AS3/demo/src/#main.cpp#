@@ -27,7 +27,6 @@ int main(int argc, char*argv[]) {
   int threads = 4;
   bool timing_mode = 0;
   int i = 1;
-  bool parallelCollision = false;
   QString scenefile = "scenario.xml";
 
   // Argument handling
@@ -73,7 +72,7 @@ int main(int argc, char*argv[]) {
   }
   
   ParseScenario parser(scenefile, start_mode);
-  model.setup(parser.getCrowds(), mode, threads, parallelCollision);  
+  model.setup(parser.getCrowds(), mode, threads);  
   QApplication app(argc, argv);
   MainWindow mainwindow(model);
 
@@ -113,7 +112,6 @@ int main(int argc, char*argv[]) {
   cout << "Time: " << elapsed_seconds.count() << " seconds." << endl;
 
   cout << "Done" << endl;
-  model.cleanup();
   delete (timer);
   return retval;
 }
