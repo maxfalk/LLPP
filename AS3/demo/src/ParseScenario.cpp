@@ -97,6 +97,18 @@ void ParseScenario::handleWaypoint()
   Waypoints[id] = WaypointsX.size()-1;
  
 }
+bool ParseScenario::checkForDuplicates(vector<int> TempPositions, int x, int y){
+  bool duplicate = false;
+  for(uint i=0;i < TempPositions.size();i+=2){
+    if(TempPositions[i] == x and 
+       TempPositions[i+1] == y){
+      duplicate = true;
+    }
+
+  }
+
+  return duplicate;
+}
 void ParseScenario::handleAgent()
 {
   float x = readFloat("x");
@@ -104,17 +116,32 @@ void ParseScenario::handleAgent()
   int n = readFloat("n");
   float dx = readFloat("dx");
   float dy = readFloat("dy");
+  int xPos = 0;
+  int yPos = 0;
+  vector<int> TempPositions;
+ 
+  for(int i = 0; i < n;i++)
+    {
+	xPos = x + qrand()/(RAND_MAX/dx) -dx/2;
+	yPos = y + qrand()/(RAND_MAX/dy) -dy/2;
+	if(checkForDuplicates(TempPositions, xPos, yPos) == false){
+	TempPositions.push_back(xPos);
+	TempPositions.push_back(yPos);
+      }
+
+    }
   
-  Ped::Crowd *crowd = new Ped::Crowd(n, WaypointsX.size(), vector_mode);  
-  for (int i = 0; i < n; ++i)
-  {
-    int xPos = x + qrand()/(RAND_MAX/dx) -dx/2;
-    int yPos = y + qrand()/(RAND_MAX/dy) -dy/2;
-    crowd->AgentsX[i] = xPos;
-    crowd->AgentsY[i] = yPos;
+  int realNumAgents = (TempPositions.size())/2;
+  printf("NumAgents: %d\n", realNumAgents);
+  Ped::Crowd *crowd = new Ped::Crowd(realNumAgents, WaypointsX.size(), vector_mode);  
+  for(uint i=0; i < TempPositions.size(); i+=2){
+    crowd->AgentsX[i] = TempPositions[i];
+    crowd->AgentsY[i] = TempPositions[i+1];
   }
+
   crowds.push_back(crowd);
 }
+
 void ParseScenario::handleAddWaypoint()
 {
   QString id = readString("id");

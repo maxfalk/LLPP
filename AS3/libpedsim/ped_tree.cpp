@@ -9,26 +9,25 @@
 #include <algorithm>
 
 using namespace std;
-
-
 /// Description: set intial values
 /// \author  chgloor
 /// \date    2012-01-28
-Ped::Ttree::Ttree(Ped::Ttree *root,std::map<const int, Ped::Ttree*> *treehash, int pdepth, int pmaxDepth, double px, double py, double pw, double ph) {
+Ped::Ttree::Ttree(Ped::Ttree *root, std::map< pair<Ped::Crowd*, int>, Ped::Ttree*> *treehash, 
+		  int pdepth, int pmaxDepth, double px, double py, double pw, double ph) {
     // more initializations here. not really necessary to put them into the initializator list, too.
   this->root = root != NULL ? root: this;
   this->treehash = treehash;
-    isleaf = true;
-    x = px;
-    y = py;
-    w = pw;
-    h = ph;
-    depth = pdepth;
-    maxDepth = pmaxDepth;
-    tree1 = NULL;
-    tree2 = NULL;
-    tree3 = NULL;
-    tree4 = NULL;
+  isleaf = true;
+  x = px;
+  y = py;
+  w = pw;
+  h = ph;
+  depth = pdepth;
+  maxDepth = pmaxDepth;
+  tree1 = NULL;
+  tree2 = NULL;
+  tree3 = NULL;
+  tree4 = NULL;
 };
 
 
@@ -57,8 +56,9 @@ void Ped::Ttree::clear() {
     }
 }
 
-bool cmp(const int offsetA, const int offsetB) {
-  return AgentsX[offsetA] == AgentsX[offsetB] && AgentsY[offsetA] == AgentsY[offsetB];
+bool cmp(const pair<Ped::Crowd*, int> A, const pair<Ped::Crowd*, int> B) {
+  return A.first->AgentsX[A.second] == B.first->AgentsX[B.second] && 
+    A.first->AgentsY[A.second] == B.first->AgentsY[B.second];
 }
 
 /// Adds an agent to the tree. Searches the right node and adds the agent there.
@@ -66,29 +66,45 @@ bool cmp(const int offsetA, const int offsetB) {
 /// \author  chgloor
 /// \date    2012-01-28
 /// \param   *a The agent to add
-void Ped::Ttree::addAgent(const int offset) {
+void Ped::Ttree::addAgent(const pair<Ped::Crowd*, int> Agent) {
     if (isleaf) {
-        agents.insert(offset);
+        agents.insert(Agent);
 	//model->setResponsibleTree(this, a);
-	(*treehash)[offset] = this;
+	(*treehash)[Agent] = this;
     }
     else {
-        if ((AgentsX[offset] >= x+w/2) && (AgentsY[offset] >= y+h/2)) tree3->addAgent(offset); // 3
-        if ((AgentsX[offset] <= x+w/2) && (AgentsY[offset] <= y+h/2)) tree1->addAgent(offset); // 1
-        if ((AgentsX[offset] >= x+w/2) && (AgentsY[offset] <= y+h/2)) tree2->addAgent(offset); // 2
-        if ((AgentsX[offset] <= x+w/2) && (AgentsY[offset] >= y+h/2)) tree4->addAgent(offset); // 4
+        if ((Agent.first->AgentsX[Agent.second] >= x+w/2) && 
+	    (Agent.first->AgentsY[Agent.second] >= y+h/2)) 
+	  tree3->addAgent(Agent); // 3
+        if ((Agent.first->AgentsX[Agent.second] <= x+w/2) && 
+	    (Agent.first->AgentsY[Agent.second] <= y+h/2)) 
+	  tree1->addAgent(Agent); // 1
+        if ((Agent.first->AgentsX[Agent.second] >= x+w/2) && 
+	    (Agent.first->AgentsY[Agent.second] <= y+h/2)) 
+	  tree2->addAgent(Agent); // 2
+        if ((Agent.first->AgentsX[Agent.second] <= x+w/2) && 
+	    (Agent.first->AgentsY[Agent.second] >= y+h/2)) 
+	  tree4->addAgent(Agent); // 4
     }
 
     if (agents.size() > 8 && depth < maxDepth) {
         isleaf = false;
         addChildren();
         while (!agents.empty()) {
-            const int offset = (*agents.begin());
-            if ((AgentsX[offset] >= x+w/2) && (AgentsY[offset] >= y+h/2)) tree3->addAgent(offset); // 3
-            if ((AgentsX[offset] <= x+w/2) && (AgentsY[offset] <= y+h/2)) tree1->addAgent(offset); // 1
-            if ((AgentsX[offset] >= x+w/2) && (AgentsY[offset] <= y+h/2)) tree2->addAgent(offset); // 2
-            if ((AgentsX[offset] <= x+w/2) && (AgentsY[offset] >= y+h/2)) tree4->addAgent(offset); // 4
-            agents.erase(offset);
+            const pair<Ped::Crowd*, int> a = (*agents.begin());
+            if ((a.first->AgentsX[a.second] >= x+w/2) && 
+		(a.first->AgentsY[a.second] >= y+h/2)) 
+	      tree3->addAgent(a); // 3
+            if ((a.first->AgentsX[a.second] <= x+w/2) && 
+		(a.first->AgentsY[a.second] <= y+h/2)) 
+	      tree1->addAgent(Agent); // 1
+            if ((a.first->AgentsX[a.second] >= x+w/2) && 
+		(a.first->AgentsY[a.second] <= y+h/2)) 
+	      tree2->addAgent(Agent); // 2
+            if ((a.first->AgentsX[a.second] <= x+w/2) && 
+		(a.first->AgentsY[a.second] >= y+h/2)) 
+	      tree4->addAgent(Agent); // 4
+            agents.erase(a);
         }
     }
 }
@@ -125,21 +141,25 @@ Ped::Ttree* Ped::Ttree::getChildByPosition(double xIn, double yIn) {
 /// \author  chgloor
 /// \date    2012-01-28
 /// \param   *a the agent to update
-void Ped::Ttree::moveAgent(const int offset) {
-    if ((AgentsX[offset] < x) || (AgentsX[offset] > (x+w)) || (AgentsY[offset] < y) || (AgentsY[offset] > (y+h))) {
-        agents.erase(offset);
-        root->addAgent(offset);
+void Ped::Ttree::moveAgent(const pair<Ped::Crowd*, int> Agent) {
+    if ((Agent.first->AgentsX[Agent.second] < x) || (Agent.first->AgentsX[Agent.second] > (x+w)) 
+	|| (Agent.first->AgentsY[Agent.second] < y) || 
+	(Agent.first->AgentsY[Agent.second] > (y+h))) {
+        
+      agents.erase(Agent);
+      root->addAgent(Agent);
     }
 }
 
 
-bool Ped::Ttree::removeAgent(const int offset) {
+bool Ped::Ttree::removeAgent(const pair<Ped::Crowd*, int> Agent) {
     if(isleaf) {
-        size_t removedCount = agents.erase(offset);
+        size_t removedCount = agents.erase(Agent);
         return (removedCount > 0);
     }
     else {
-        return getChildByPosition(AgentsX[offset], AgentsY[offset])->removeAgent(offset);
+        return getChildByPosition(Agent.first->AgentsX[Agent.second], 
+				  Agent.first->AgentsY[Agent.second])->removeAgent(Agent);
     }
 }
 
@@ -168,9 +188,9 @@ int Ped::Ttree::cut() {
         agents.insert(tree3->agents.begin(), tree3->agents.end());
         agents.insert(tree4->agents.begin(), tree4->agents.end());
         isleaf = true;
-        for (set<const int>::iterator it = agents.begin(); it != agents.end(); ++it) {
-            const int offset = (*it);
-	    (*treehash)[offset] = this;
+        for (auto it = agents.begin(); it != agents.end(); ++it) {
+            const pair<Ped::Crowd*, int> Agent = (*it);
+	    (*treehash)[Agent] = this;
         }
         delete tree1;
         delete tree2;
@@ -186,15 +206,15 @@ int Ped::Ttree::cut() {
 /// \date    2012-01-28
 /// \return  The set of agents
 /// \todo This might be not very efficient, since all childs are checked, too. And then the set (set of pointer, but still) is being copied around.
-set<const int> Ped::Ttree::getAgents() const {
+std::set<std::pair<Ped::Crowd*, int> > Ped::Ttree::getAgents() const {
     if (isleaf)
         return agents;
 
-    set<const int> ta;
-    set<const int> t1 = tree1->getAgents();
-    set<const int> t2 = tree2->getAgents();
-    set<const int> t3 = tree3->getAgents();
-    set<const int> t4 = tree4->getAgents();
+    std::set<std::pair<Ped::Crowd*, int> > ta;
+    std::set<std::pair<Ped::Crowd*, int> > t1 = tree1->getAgents();
+    std::set<std::pair<Ped::Crowd*, int> > t2 = tree2->getAgents();
+    std::set<std::pair<Ped::Crowd*, int> > t3 = tree3->getAgents();
+    std::set<std::pair<Ped::Crowd*, int> > t4 = tree4->getAgents();
     ta.insert(t1.begin(), t1.end());
     ta.insert(t2.begin(), t2.end());
     ta.insert(t3.begin(), t3.end());
@@ -202,11 +222,12 @@ set<const int> Ped::Ttree::getAgents() const {
     return ta;
 }
 
-void Ped::Ttree::getAgents(list<const int>& outputList) const {
+void Ped::Ttree::getAgents(list<std::pair<Ped::Crowd*, int> >& outputList) const {
     if(isleaf) {
-      for (set<const int>::iterator it = agents.begin(); it != agents.end(); ++it) {
-  	    const int currentAgent = (*it);
-            outputList.push_back(currentAgent);
+      for (auto it = agents.begin(); 
+	   it != agents.end(); ++it) {
+	std::pair<Ped::Crowd*, int> currentAgent = (*it);
+	outputList.push_back(currentAgent);
       }
     }
     else {

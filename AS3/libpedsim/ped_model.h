@@ -4,13 +4,12 @@
 #include <map>
 #include "ped_crowd.h"
 #include "ped_tree.h"
-//#include "ped_agent.h"
 
 #define COL_THREADS 4
 
 namespace Ped{
   class Ttree;
-
+  class Crowd;
   enum IMPLEMENTATION {CUDA, VECTOR, OMP, PTHREAD, SEQ};
   class Model
   {
@@ -39,10 +38,9 @@ namespace Ped{
     void pThreads();
     void vector();
     //void cuda();
-    
-    std::vector<int> agents;
+   
 
-    void doSafeMovement(int offset);
+    void doSafeMovment(std::pair<Ped::Crowd*, int> Agent);
     // The maximum quadtree depth
     static const int treeDepth = 10;    
 
@@ -51,11 +49,12 @@ namespace Ped{
 
     // Maps the agent to the tree node containing it. Convenience data structure
     // in order to update the tree in case the agent moves.
-    std::map<const int, Ped::Ttree*> *treehash;
+    std::map<std::pair<Crowd*, int>, Ped::Ttree*> *treehash;
 
     // Returns the set of neighboring agents for the specified position
-    set<const int> getNeighbors(int x, int y, int dist) const;
-    void getNeighbors(list<const int>& neighborList, int x, int y, int d) const;
+    std::set<std::pair<Ped::Crowd*, int> > getNeighbors(int x, int y, int dist) const;
+    void getNeighbors(std::list<std::pair<Ped::Crowd*, int> >& neighborList, int x, 
+		      int y, int d) const;
   };
 }
 #endif
