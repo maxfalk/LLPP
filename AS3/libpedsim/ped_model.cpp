@@ -33,7 +33,8 @@ void *checkCollisions(void *data) {
   delete (collisionThreadData*) data;
 }
 
-void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION _mode, int _nrOfThreads, bool _parallelCollision)
+void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, 
+		       IMPLEMENTATION _mode, int _nrOfThreads, bool _parallelCollision)
 {
     nrOfThreads = _nrOfThreads;
     crowds = crowdInScenario;
@@ -50,42 +51,23 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, IMPLEMENTATION 
     //    for(int i = 0; i < crowds.size(); i++)
     //      crowds[i]->init_cuda();
     //}
-    
-    //// Hack! do not allow agents to be on the same position. Remove duplicates from scenario.
-    //bool (*fn_pt)(Ped::Tagent*, Ped::Tagent*) = cmp;
-    //std::set<Ped::Tagent*, bool(*)(Ped::Tagent*, Ped::Tagent*)> agentsWithUniquePosition (fn_pt);
-    //std::copy(agentsInScenario->begin(), agentsInScenario->end(), std::inserter(agentsWithUniquePosition, agentsWithUniquePosition.begin()));
-
-    //agents = std::vector<Ped::Tagent*>(agentsWithUniquePosition.begin(), agentsWithUniquePosition.end());
-    //treehash = new std::map<const Ped::Tagent*, Ped::Ttree*>();
-
+      
+    treehash = new std::map< std::pair<Crowd*, int>, Ped::Ttree*>();
     //// Create a new quadtree containing all agents
-    //tree = new Ttree(NULL,treehash, 0, treeDepth, 0, 0, 1000, 800);
-
-    //for (std::vector<Ped::Tagent*>::iterator it = agents.begin(); it != agents.end(); ++it)
-    //{
-    //std::cout << (*it)->getX() << " " << (*it)->getY() << std::endl;
-    //tree->addAgent(*it);
-    //}  
+    tree = new Ttree(NULL,treehash, 0, treeDepth, 0, 0, 1000, 800);
   
-  treehash = new std::map< std::pair<Crowd*, int>, Ped::Ttree*>();
-  //// Create a new quadtree containing all agents
-  tree = new Ttree(NULL,treehash, 0, treeDepth, 0, 0, 1000, 800);
-  
-  //add all agents to tree
-  int agent = 0;
-  for(int i = 0; i < crowds.size(); i++){
-    for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
-      std::pair<Crowd*, int> Agent(crowds[i], j);
-      tree->addAgent(Agent);
+    //add all agents to tree
+    for(int i = 0; i < crowds.size(); i++){
+      for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
+	tree->addAgent(std::make_pair(crowds[i], j));
+      }
     }
-  }
-  for (int i = 0; i < COL_THREADS; i++) {
-    collisionThreadData *data =  new collisionThreadData();
-    data->id = i;
-    //data->tree = trees[i]; //??
-    pthread_create(&collisionThreads[i], NULL, checkCollisions, (void*) data);
-  }
+    for (int i = 0; i < COL_THREADS; i++) {
+      collisionThreadData *data =  new collisionThreadData();
+      data->id = i;
+      //data->tree = trees[i]; //??
+      pthread_create(&collisionThreads[i], NULL, checkCollisions, (void*) data);
+    }
 }
 const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
 {
@@ -111,6 +93,7 @@ void Ped::Model::seq()
     for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
       crowds[i]->where_to_go(j);
       crowds[i]->go(j);
+      doSafeMovment(std::make_pair(crowds[i],j));
       
     }
    }
@@ -207,37 +190,55 @@ std::set<std::pair<Ped::Crowd*, int> > neighbors =
 	       Agent.first->AgentsY[Agent.second], 
 	       2);
 
-  //Retrive thier posistions
  std::vector<std::pair<int, int> > prioritizedAlternatives;
- std::pair<int,int> pDesiered(Agent.first->DesiredX[Agent.second], 
-			       Agent.first->DesiredY[Agent.second]);
-  prioritizedAlternatives.push_back(pDesiered);
+ std::pair<int,int> pDesired(Agent.first->DesiredX[Agent.second], 
+			     Agent.first->DesiredY[Agent.second]);
+  prioritizedAlternatives.push_back(pDesired);
   //Compute alternative ways of moving
-  //Just stand still
-  std::pair<int,int> altP(Agent.first->AgentsX[Agent.second], 
-			Agent.first->AgentsY[Agent.second]);
+  int diffX = pDesired.first - Agent.first->AgentsX[Agent.second];
+  int diffY = pDesired.second - Agent.first->AgentsY[Agent.second];
+  std::pair<int, int> p1, p2, p3,p4,p5,p6;
 
-  prioritizedAlternatives.push_back(altP);
+
+  p1 = std::make_pair(Agent.first->AgentsX[Agent.second] - diffX, 
+		      Agent.first->AgentsY[Agent.second]);
+  p2 = std::make_pair(Agent.first->AgentsX[Agent.second] + diffX, 
+		      Agent.first->AgentsY[Agent.second]);
+  p3 = std::make_pair(Agent.first->AgentsX[Agent.second], 
+		      Agent.first->AgentsY[Agent.second] + diffY);
+  p4 = std::make_pair(Agent.first->AgentsX[Agent.second], 
+		      Agent.first->AgentsY[Agent.second] - diffY);
+
+
+  prioritizedAlternatives.push_back(p1);
+  prioritizedAlternatives.push_back(p2);
+  prioritizedAlternatives.push_back(p3);
+  prioritizedAlternatives.push_back(p4);
+
   //Find an empty spot of the once computed to move to
-  bool taken = false;
-  for(int i=0; i< prioritizedAlternatives.size(); i++){
+  for(int i=0; i < prioritizedAlternatives.size(); i++){
+    bool taken = false;
     for(auto it = neighbors.begin(); it != neighbors.end(); ++it){
       
       if(it->first->AgentsX[it->second] == prioritizedAlternatives[i].first and
 	 it->first->AgentsY[it->second] == prioritizedAlternatives[i].second){
 	taken = true;
-	
       }
     }
     
     if(taken == false){
+
       Agent.first->AgentsX[Agent.second] = prioritizedAlternatives[i].first;
       Agent.first->AgentsY[Agent.second] = prioritizedAlternatives[i].second;
       //Move agent in quadTree if necassary
-      tree->moveAgent(Agent);
+      (*treehash)[Agent]->moveAgent(Agent);
       break;
     }    
   }
+}
+void Ped::Model::doSafeMovmentParallel(std::pair<Ped::Crowd*, int> Agent){
+
+
 }
 std::set<std::pair<Ped::Crowd*, int> > Ped::Model::getNeighbors(int x, int y, 
 								int dist) const {

@@ -70,8 +70,6 @@ namespace Ped {
   private:
     std::map<std::pair<Ped::Crowd*, int>, Ped::Ttree*> *treehash;
     std::set<std::pair<Ped::Crowd*, int> > agents;
-       
- 
   };
 }
 

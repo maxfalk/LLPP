@@ -97,11 +97,12 @@ void ParseScenario::handleWaypoint()
   Waypoints[id] = WaypointsX.size()-1;
  
 }
-bool ParseScenario::checkForDuplicates(vector<int> TempPositions, int x, int y){
+bool ParseScenario::checkForDuplicates(vector<float> TempxPos, vector<float> TempyPos, 
+				       int x, int y){
   bool duplicate = false;
-  for(uint i=0;i < TempPositions.size();i+=2){
-    if(TempPositions[i] == x and 
-       TempPositions[i+1] == y){
+  for(uint i=0;i < TempxPos.size();i++){
+    if(TempxPos[i] == x and 
+       TempyPos[i] == y){
       duplicate = true;
     }
 
@@ -111,35 +112,36 @@ bool ParseScenario::checkForDuplicates(vector<int> TempPositions, int x, int y){
 }
 void ParseScenario::handleAgent()
 {
+
   float x = readFloat("x");
   float y = readFloat("y");
   int n = readFloat("n");
   float dx = readFloat("dx");
   float dy = readFloat("dy");
-  int xPos = 0;
-  int yPos = 0;
-  vector<int> TempPositions;
- 
-  for(int i = 0; i < n;i++)
-    {
-	xPos = x + qrand()/(RAND_MAX/dx) -dx/2;
-	yPos = y + qrand()/(RAND_MAX/dy) -dy/2;
-	if(checkForDuplicates(TempPositions, xPos, yPos) == false){
-	TempPositions.push_back(xPos);
-	TempPositions.push_back(yPos);
-      }
-
-    }
+  vector<float> TempxPos;
+  vector<float> TempyPos;
   
-  int realNumAgents = (TempPositions.size())/2;
-  printf("NumAgents: %d\n", realNumAgents);
-  Ped::Crowd *crowd = new Ped::Crowd(realNumAgents, WaypointsX.size(), vector_mode);  
-  for(uint i=0; i < TempPositions.size(); i+=2){
-    crowd->AgentsX[i] = TempPositions[i];
-    crowd->AgentsY[i] = TempPositions[i+1];
+  for(int i = 0; i < n;i++){
+    int xPos = x + qrand()/(RAND_MAX/dx) -dx/2;
+    int yPos = y + qrand()/(RAND_MAX/dy) -dy/2;
+    if(checkForDuplicates(TempxPos, TempyPos, xPos, yPos) == false){
+      TempxPos.push_back((float)xPos);
+      TempyPos.push_back((float)yPos);
+    }
+      
+  }
+  
+  
+  
+  Ped::Crowd *crowd = new Ped::Crowd(TempxPos.size(), WaypointsX.size(), vector_mode);  
+  for(uint i = 0; i < TempxPos.size(); i++){
+    crowd->AgentsX[i] = TempxPos[i];
+    crowd->AgentsY[i] = TempyPos[i];
   }
 
   crowds.push_back(crowd);
+
+
 }
 
 void ParseScenario::handleAddWaypoint()
