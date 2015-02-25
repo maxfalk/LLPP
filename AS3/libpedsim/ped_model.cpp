@@ -51,19 +51,21 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario,
 	tree->addAgent(std::make_pair(crowds[i], j));
       }
     }
-    for (int i = 0; i < COL_THREADS; i++) {
-      collisionThreadData *data =  new collisionThreadData();
-      data->id = i;
-      if(i == 0)
-	data->tree = tree->tree1;
-      if(i == 1)
-	data->tree = tree->tree2;
-      if(i == 2)
-	data->tree = tree->tree3;
-      if(i == 3)
-	data->tree = tree->tree4;
-      printf("Creating thread!\n");
-      pthread_create(&collisionThreads[i], NULL, Ped::Model::checkCollisions, (void*) data);
+    if( parallelCollision == true){
+      for (int i = 0; i < COL_THREADS; i++) {
+	collisionThreadData *data =  new collisionThreadData();
+	data->id = i;
+	if(i == 0)
+	  data->tree = tree->tree1;
+	if(i == 1)
+	  data->tree = tree->tree2;
+	if(i == 2)
+	  data->tree = tree->tree3;
+	if(i == 3)
+	  data->tree = tree->tree4;
+	printf("Creating thread!\n");
+	pthread_create(&collisionThreads[i], NULL, Ped::Model::checkCollisions, (void*) data);
+      }
     }
 }
 const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
@@ -157,7 +159,6 @@ void Ped::Model::vector()
 void Ped::Model::tick()
 {
 
-  printf("tick\n");
   if (implementation == SEQ) {
     seq();
   } else if (implementation == PTHREAD) {
@@ -203,23 +204,22 @@ void Ped::Model::doSafeMovment(std::pair<Ped::Crowd*, int> Agent){
   //Compute alternative ways of moving
   int diffX = pDesired.first - Agent.first->AgentsX[Agent.second];
   int diffY = pDesired.second - Agent.first->AgentsY[Agent.second];
-  std::pair<int, int> p1, p2, p3,p4,p5,p6;
+  std::pair<int, int> p1, p2;
 
-
-  p1 = std::make_pair(Agent.first->AgentsX[Agent.second] - diffX, 
-		      Agent.first->AgentsY[Agent.second]);
-  p2 = std::make_pair(Agent.first->AgentsX[Agent.second] + diffX, 
-		      Agent.first->AgentsY[Agent.second]);
-  p3 = std::make_pair(Agent.first->AgentsX[Agent.second], 
-		      Agent.first->AgentsY[Agent.second] + diffY);
-  p4 = std::make_pair(Agent.first->AgentsX[Agent.second], 
-		      Agent.first->AgentsY[Agent.second] - diffY);
-
-
+  if (diffX == 0 || diffY == 0)
+    {
+      // Agent wants to walk straight to North, South, West or East
+      p1 = std::make_pair(pDesired.first + diffY, pDesired.second + diffX);
+      p2 = std::make_pair(pDesired.first - diffY, pDesired.second - diffX);
+    }
+  else {
+    // Agent wants to walk diagonally
+    p1 = std::make_pair(pDesired.first, Agent.first->AgentsY[Agent.second]);
+    p2 = std::make_pair(Agent.first->AgentsX[Agent.second], pDesired.second);
+  }
   prioritizedAlternatives.push_back(p1);
   prioritizedAlternatives.push_back(p2);
-  prioritizedAlternatives.push_back(p3);
-  prioritizedAlternatives.push_back(p4);
+
 
   //Search for neighboring agents
   std::set<std::pair<Ped::Crowd*, int> > neighbors = 
@@ -263,23 +263,23 @@ void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> Agent,
   //Compute alternative ways of moving
   int diffX = pDesired.first - Agent.first->AgentsX[Agent.second];
   int diffY = pDesired.second - Agent.first->AgentsY[Agent.second];
-  std::pair<int, int> p1, p2, p3,p4,p5,p6;
+  std::pair<int, int> p1, p2;
 
-
-  p1 = std::make_pair(Agent.first->AgentsX[Agent.second] - diffX, 
-		      Agent.first->AgentsY[Agent.second]);
-  p2 = std::make_pair(Agent.first->AgentsX[Agent.second] + diffX, 
-		      Agent.first->AgentsY[Agent.second]);
-  p3 = std::make_pair(Agent.first->AgentsX[Agent.second], 
-		      Agent.first->AgentsY[Agent.second] + diffY);
-  p4 = std::make_pair(Agent.first->AgentsX[Agent.second], 
-		      Agent.first->AgentsY[Agent.second] - diffY);
-
-
+  if (diffX == 0 || diffY == 0)
+    {
+      // Agent wants to walk straight to North, South, West or East
+      p1 = std::make_pair(pDesired.first + diffY, pDesired.second + diffX);
+      p2 = std::make_pair(pDesired.first - diffY, pDesired.second - diffX);
+    }
+  else {
+    // Agent wants to walk diagonally
+    p1 = std::make_pair(pDesired.first, Agent.first->AgentsY[Agent.second]);
+    p2 = std::make_pair(Agent.first->AgentsX[Agent.second], pDesired.second);
+  }
   prioritizedAlternatives.push_back(p1);
   prioritizedAlternatives.push_back(p2);
-  prioritizedAlternatives.push_back(p3);
-  prioritizedAlternatives.push_back(p4);
+
+
 
   //Search for neighboring agents
   std::set<std::pair<Ped::Crowd*, int> > neighbors =
@@ -291,6 +291,7 @@ void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> Agent,
   //Find an empty spot of the once computed to move to
   for(int i=0; i < prioritizedAlternatives.size(); i++){
     bool taken = false;
+
     for(auto it = neighbors.begin(); it != neighbors.end(); ++it){
       
       if(it->first->AgentsX[it->second] == prioritizedAlternatives[i].first and
@@ -300,20 +301,23 @@ void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> Agent,
     }
     
     if(taken == false){
-
       if((*treehash)[Agent]->intersects(prioritizedAlternatives[i].first,
 					prioritizedAlternatives[i].second,0)){
 	//Still in the current threads region
 	Agent.first->AgentsX[Agent.second] = prioritizedAlternatives[i].first;
 	Agent.first->AgentsY[Agent.second] = prioritizedAlternatives[i].second;
-	break;
+	Agent.first->DesiredX[Agent.second] = prioritizedAlternatives[i].first;
+	Agent.first->DesiredY[Agent.second] = prioritizedAlternatives[i].second;
 
+	(*treehash)[Agent]->moveAgent(Agent);
       }else{
-	//Wants to move to other threads region
-	printf("Change region!\n");
+	Agent.first->DesiredX[Agent.second] = prioritizedAlternatives[i].first;
+	Agent.first->DesiredY[Agent.second] = prioritizedAlternatives[i].second;
+
+	(*treehash)[Agent]->moveAgent(Agent);
 
       }
-
+      break;
     }    
   }
 
