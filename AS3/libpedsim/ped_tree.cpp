@@ -14,7 +14,7 @@ using namespace std;
 /// \date    2012-01-28
 Ped::Ttree::Ttree(Ped::Ttree *root, std::map< pair<Ped::Crowd*, int>, Ped::Ttree*> *treehash, 
 		  int pdepth, int pmaxDepth, double px, double py, double pw, double ph) {
-    // more initializations here. not really necessary to put them into the initializator list, too.
+  // more initializations here. not really necessary to put them into the initializator list, too.
   this->root = root != NULL ? root: this;
   this->treehash = treehash;
   isleaf = true;
@@ -28,6 +28,7 @@ Ped::Ttree::Ttree(Ped::Ttree *root, std::map< pair<Ped::Crowd*, int>, Ped::Ttree
   tree2 = NULL;
   tree3 = NULL;
   tree4 = NULL;
+  pthread_mutex_init(&mutexsum, NULL);
 };
 
 
@@ -36,6 +37,7 @@ Ped::Ttree::Ttree(Ped::Ttree *root, std::map< pair<Ped::Crowd*, int>, Ped::Ttree
 /// \date    2012-01-28
 Ped::Ttree::~Ttree() {
     clear();
+    pthread_mutex_destroy(&mutexsum);
 }
 
 
@@ -68,22 +70,24 @@ bool cmp(const pair<Ped::Crowd*, int> A, const pair<Ped::Crowd*, int> B) {
 /// \param   *a The agent to add
 void Ped::Ttree::addAgent(const pair<Ped::Crowd*, int> Agent) {
     if (isleaf) {
-        agents.insert(Agent);
-	//model->setResponsibleTree(this, a);
-	(*treehash)[Agent] = this;
+       pthread_mutex_lock(&mutexsum);
+      agents.insert(Agent);
+      (*treehash)[Agent] = this;
+      pthread_mutex_unlock(&mutexsum);
+ 
     }
     else {
-        if ((Agent.first->AgentsX[Agent.second] >= x+w/2) && 
-	    (Agent.first->AgentsY[Agent.second] >= y+h/2)) 
+        if ((Agent.first->DesiredX[Agent.second] > x+w/2) && 
+	    (Agent.first->DesiredY[Agent.second] >= y+h/2)) 
 	  tree3->addAgent(Agent); // 3
-        if ((Agent.first->AgentsX[Agent.second] <= x+w/2) && 
-	    (Agent.first->AgentsY[Agent.second] <= y+h/2)) 
+        if ((Agent.first->DesiredX[Agent.second] <= x+w/2) && 
+	    (Agent.first->DesiredY[Agent.second] <= y+h/2)) 
 	  tree1->addAgent(Agent); // 1
-        if ((Agent.first->AgentsX[Agent.second] >= x+w/2) && 
-	    (Agent.first->AgentsY[Agent.second] <= y+h/2)) 
+        if ((Agent.first->DesiredX[Agent.second] > x+w/2) && 
+	    (Agent.first->DesiredY[Agent.second] <= y+h/2)) 
 	  tree2->addAgent(Agent); // 2
-        if ((Agent.first->AgentsX[Agent.second] <= x+w/2) && 
-	    (Agent.first->AgentsY[Agent.second] >= y+h/2)) 
+        if ((Agent.first->DesiredX[Agent.second] <= x+w/2) && 
+	    (Agent.first->DesiredY[Agent.second] >= y+h/2)) 
 	  tree4->addAgent(Agent); // 4
     }
 
@@ -92,17 +96,17 @@ void Ped::Ttree::addAgent(const pair<Ped::Crowd*, int> Agent) {
         addChildren();
         while (!agents.empty()) {
             const pair<Ped::Crowd*, int> a = (*agents.begin());
-            if ((a.first->AgentsX[a.second] >= x+w/2) && 
-		(a.first->AgentsY[a.second] >= y+h/2)) 
+            if ((a.first->DesiredX[a.second] > x+w/2) && 
+		(a.first->DesiredY[a.second] >= y+h/2)) 
 	      tree3->addAgent(a); // 3
-            if ((a.first->AgentsX[a.second] <= x+w/2) && 
-		(a.first->AgentsY[a.second] <= y+h/2)) 
+            if ((a.first->DesiredX[a.second] <= x+w/2) && 
+		(a.first->DesiredY[a.second] <= y+h/2)) 
 	      tree1->addAgent(Agent); // 1
-            if ((a.first->AgentsX[a.second] >= x+w/2) && 
-		(a.first->AgentsY[a.second] <= y+h/2)) 
+            if ((a.first->DesiredX[a.second] > x+w/2) && 
+		(a.first->DesiredY[a.second] <= y+h/2)) 
 	      tree2->addAgent(Agent); // 2
-            if ((a.first->AgentsX[a.second] <= x+w/2) && 
-		(a.first->AgentsY[a.second] >= y+h/2)) 
+            if ((a.first->DesiredX[a.second] <= x+w/2) && 
+		(a.first->DesiredY[a.second] >= y+h/2)) 
 	      tree4->addAgent(Agent); // 4
             agents.erase(a);
         }
@@ -124,11 +128,11 @@ void Ped::Ttree::addChildren() {
 Ped::Ttree* Ped::Ttree::getChildByPosition(double xIn, double yIn) {
     if((xIn <= x+w/2) && (yIn <= y+h/2))
         return tree1;
-    if((xIn >= x+w/2) && (yIn <= y+h/2))
+    if((xIn > x+w/2) && (yIn <= y+h/2))
         return tree2;
-    if((xIn >= x+w/2) && (yIn >= y+h/2))
+    if((xIn > x+w/2) && (yIn > y+h/2))
         return tree3;
-    if((xIn <= x+w/2) && (yIn >= y+h/2))
+    if((xIn <= x+w/2) && (yIn > y+h/2))
         return tree4;
 
     // this should never happen
@@ -142,12 +146,15 @@ Ped::Ttree* Ped::Ttree::getChildByPosition(double xIn, double yIn) {
 /// \date    2012-01-28
 /// \param   *a the agent to update
 void Ped::Ttree::moveAgent(const pair<Ped::Crowd*, int> Agent) {
-    if ((Agent.first->AgentsX[Agent.second] < x) || (Agent.first->AgentsX[Agent.second] > (x+w)) 
+    if ((Agent.first->AgentsX[Agent.second] < x) || (Agent.first->AgentsX[Agent.second] >= (x+w)) 
 	|| (Agent.first->AgentsY[Agent.second] < y) || 
-	(Agent.first->AgentsY[Agent.second] > (y+h))) {
-        
+	(Agent.first->AgentsY[Agent.second] >= (y+h))) {
+      printf("Moving agent\n");
+      pthread_mutex_lock(&mutexsum);
       agents.erase(Agent);
+      pthread_mutex_unlock(&mutexsum);
       root->addAgent(Agent);
+      
     }
 }
 
@@ -247,7 +254,7 @@ void Ped::Ttree::getAgents(list<std::pair<Ped::Crowd*, int> >& outputList) const
 /// \param   py The y co-ordinate of the point
 /// \param   pr The radius
 bool Ped::Ttree::intersects(double px, double py, double pr) const {
-    if (((px+pr) >= x) && ((px-pr) <= (x+w)) && ((py+pr) >= y) && ((py-pr) <= (y+h)))
+    if (((px+pr) > x) && ((px-pr) <= (x+w)) && ((py+pr) > y) && ((py-pr) <= (y+h)))
         return true; // x+-r/y+-r is inside
     else
         return false;

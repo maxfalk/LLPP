@@ -51,7 +51,7 @@ namespace Ped {
     virtual void addChildren();
     Ttree* getChildByPosition(double x, double y);
     int cut();
-
+    pthread_mutex_t mutexsum;
     bool isleaf;
     double x;
     double y;

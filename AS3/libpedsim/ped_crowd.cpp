@@ -112,6 +112,10 @@ void Ped::Crowd::init(){
     DestinationX[i] = WaypointX[CurrentWaypoint[i]];
     DestinationY[i] = WaypointY[CurrentWaypoint[i]];
     DestinationR[i] = WaypointR[CurrentWaypoint[i]];
+    DesiredX[i] = AgentsX[i];
+    DesiredY[i] = AgentsY[i];
+    DesiredZ[i] = AgentsZ[i];
+
   }
 
 
