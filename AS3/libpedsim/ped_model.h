@@ -4,7 +4,7 @@
 #include <map>
 #include "ped_crowd.h"
 #include "ped_tree.h"
-
+#include "ped_net.h"
 #define COL_THREADS 4
 
 namespace Ped{

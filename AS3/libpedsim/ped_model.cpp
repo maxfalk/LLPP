@@ -33,11 +33,12 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario,
     //      crowds[i]->init_cuda();
     //}
 
-    net = new Ped::Net(800,600);
+    net = Ped::Net(800,600);
 
     for (int i = 0; i < crowds.size(); i++) {
         for (int j = 0; j < crowds[i]->NumberOfAgents; j++) {
-            net.net[crowds[i]->AgentsX[j]][crowds[i]->AgentsY[j]] = new std::make_pair(crowds[i],j);
+            net.net[crowds[i]->AgentsX[j]][crowds[i]->AgentsY[j]] = 
+	      new std::make_pair(crowds[i],j);
         }
     }
 
