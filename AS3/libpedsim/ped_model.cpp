@@ -15,62 +15,49 @@ volatile bool noCollisionCheck[COL_THREADS];
 volatile bool collisionCheckNotDone[COL_THREADS];
 
 
-
-typedef struct _collisionThreadData {
-  int id;
-  Ped::Ttree *tree;
-} collisionThreadData;
-
 void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, 
-		       IMPLEMENTATION _mode, int _nrOfThreads, bool _parallelCollision)
-{
+		       IMPLEMENTATION _mode, int _nrOfThreads, bool _parallelCollision) {
     nrOfThreads = _nrOfThreads;
     crowds = crowdInScenario;
     implementation = _mode;
     parallelCollision = _parallelCollision;
     crowd = crowds;
     dontKill = true;
-    printf("Parallel collision: %d\n",parallelCollision);
     for (int i = 0; i < COL_THREADS; i++) {
-      noCollisionCheck[i] = true;
-      collisionCheckNotDone[i] = true;
+        noCollisionCheck[i] = true;
+        collisionCheckNotDone[i] = true;
     }
 
     //if(implementation == CUDA){
     //    for(int i = 0; i < crowds.size(); i++)
     //      crowds[i]->init_cuda();
     //}
-      
-    treehash = new std::map< std::pair<Crowd*, int>, Ped::Ttree*>();
-    //// Create a new quadtree containing all agents
-    tree = new Ttree(NULL,treehash, 0, treeDepth, 0, 0, 1000, 800);
-  
-    //add all agents to tree
-    for(int i = 0; i < crowds.size(); i++){
-      for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
-	tree->addAgent(std::make_pair(crowds[i], j));
-      }
+
+    net = new Ped::Net(800,600);
+
+    for (int i = 0; i < crowds.size(); i++) {
+        for (int j = 0; j < crowds[i]->NumberOfAgents; j++) {
+            net.net[crowds[i]->AgentsX[j]][crowds[i]->AgentsY[j]] = new std::make_pair(crowds[i],j);
+        }
     }
-    if( parallelCollision == true){
-      for (int i = 0; i < COL_THREADS; i++) {
-	collisionThreadData *data =  new collisionThreadData();
-	data->id = i;
-	if(i == 0)
-	  data->tree = tree->tree1;
-	if(i == 1)
-	  data->tree = tree->tree2;
-	if(i == 2)
-	  data->tree = tree->tree3;
-	if(i == 3)
-	  data->tree = tree->tree4;
-	printf("Creating thread!\n");
-	pthread_create(&collisionThreads[i], NULL, Ped::Model::checkCollisions, (void*) data);
-      }
+
+    if (parallelCollision == true){
+        for (int i = 0; i < COL_THREADS; i++) {
+            int *indices = (int *) malloc(2*sizeof(int));
+            indices[0] = (net.sizeY/COL_THREADS)*i;
+            if (COL_THREADS-i == 1) {
+                indices[1] = net.sizeY;
+            } else {
+                indices[1] = (net.sizeY/COL_THREADS)*(i+1);
+            }
+            printf("Creating thread!\n");
+            pthread_create(&collisionThreads[i], NULL, Ped::Model::checkCollisions, (void*) indices);
+        }
     }
 }
 const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
 {
-  return crowds;
+    return crowds;
 }
 
 void *threaded_tick(void *inds) {
@@ -79,21 +66,20 @@ void *threaded_tick(void *inds) {
     int startIndex = indices[0];
     int stopIndex = indices[1];
     for (int i = 0; i < crowd.size(); i++) {
-      for (int j = startIndex; j < stopIndex; j++) {
-        crowd[i]->where_to_go(j);
-        crowd[i]->go(j);
-      }
+        for (int j = startIndex; j < stopIndex; j++) {
+            crowd[i]->where_to_go(j);
+            crowd[i]->go(j);
+        }
     }
 }
 void Ped::Model::seq()
 {
   
-  for(int i = 0; i < crowds.size(); i++){
-    for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
-      crowds[i]->where_to_go(j);
-      crowds[i]->go(j);
-      
-    }
+    for(int i = 0; i < crowds.size(); i++){
+        for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
+            crowds[i]->where_to_go(j);
+            crowds[i]->go(j);
+        }
    }
 
 }
@@ -222,11 +208,9 @@ void Ped::Model::doSafeMovment(std::pair<Ped::Crowd*, int> Agent){
 
 
   //Search for neighboring agents
-  std::set<std::pair<Ped::Crowd*, int> > neighbors = 
-    getNeighbors(Agent.first->AgentsX[Agent.second], 
-		 Agent.first->AgentsY[Agent.second], 
-		 2,
-		 tree);
+    std::vector<std::pair<Ped::Crowd*, int> > neighbors;
+    net.get_neighbors(Agent.first->AgentsX[Agent.second], 
+		 Agent.first->AgentsY[Agent.second],neighbors);
 
 
   //Find an empty spot of the once computed to move to
@@ -241,21 +225,17 @@ void Ped::Model::doSafeMovment(std::pair<Ped::Crowd*, int> Agent){
     }
     
     if(taken == false){
-
-      Agent.first->AgentsX[Agent.second] = prioritizedAlternatives[i].first;
-      Agent.first->AgentsY[Agent.second] = prioritizedAlternatives[i].second;
-      //Move agent in quadTree if necassary
-      (*treehash)[Agent]->moveAgent(Agent);
-      break;
+        net.net[prioritizedAlternatives[i].first][prioritizedAlternatives[i].second] = Agent;
+        net.net[Agent.first->AgentsX[Agent.second][Agent.first->AgentsY[Agent.second] = NULL;
+        Agent.first->AgentsX[Agent.second] = prioritizedAlternatives[i].first;
+        Agent.first->AgentsY[Agent.second] = prioritizedAlternatives[i].second;
+        break;
     }    
   }
 
 }
-void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> Agent, 
-				       Ped::Ttree *tree){
+void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> Agent) {
 
-
-  std::map<std::pair<Crowd*, int>, Ped::Ttree*> *treehash = tree->treehash;
   std::vector<std::pair<int, int> > prioritizedAlternatives;
   std::pair<int,int> pDesired(Agent.first->DesiredX[Agent.second], 
 			      Agent.first->DesiredY[Agent.second]);
@@ -282,11 +262,9 @@ void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> Agent,
 
 
   //Search for neighboring agents
-  std::set<std::pair<Ped::Crowd*, int> > neighbors =
-    getNeighbors(Agent.first->AgentsX[Agent.second], 
-		 Agent.first->AgentsY[Agent.second], 
-		 2,
-		 tree);
+  std::vector<std::pair<Ped::Crowd*, int> > neighbors;
+  net.get_neighbors(Agent.first->AgentsX[Agent.second], 
+		 Agent.first->AgentsY[Agent.second],neighbors);
 
   //Find an empty spot of the once computed to move to
   for(int i=0; i < prioritizedAlternatives.size(); i++){
@@ -301,76 +279,32 @@ void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> Agent,
     }
     
     if(taken == false){
-      if((*treehash)[Agent]->intersects(prioritizedAlternatives[i].first,
-					prioritizedAlternatives[i].second,0)){
-	//Still in the current threads region
-	Agent.first->AgentsX[Agent.second] = prioritizedAlternatives[i].first;
-	Agent.first->AgentsY[Agent.second] = prioritizedAlternatives[i].second;
-	Agent.first->DesiredX[Agent.second] = prioritizedAlternatives[i].first;
-	Agent.first->DesiredY[Agent.second] = prioritizedAlternatives[i].second;
-
-	(*treehash)[Agent]->moveAgent(Agent);
-      }else{
-	Agent.first->DesiredX[Agent.second] = prioritizedAlternatives[i].first;
-	Agent.first->DesiredY[Agent.second] = prioritizedAlternatives[i].second;
-
-	(*treehash)[Agent]->moveAgent(Agent);
-
+        bool successfulSwap = net.take_pos_atomic(prioritizedAlternatives[i].first, prioritizedAlternatives[i].second, Agent);
+        if (successfulSwap) {
+            net.net[Agent.first->AgentsX[Agent.second][Agent.first->AgentsY[Agent.second] = NULL;
+            Agent.first->AgentsX[Agent.second] = prioritizedAlternatives[i].first;
+            Agent.first->AgentsY[Agent.second] = prioritizedAlternatives[i].second;
+            break;
+        }
       }
-      break;
     }    
   }
-
-
 }
 void *Ped::Model::checkCollisions(void *data) {
-  int id = ((collisionThreadData*) data)->id;
-  Ped::Ttree *tree = ((collisionThreadData*) data)->tree;
+    int startIndex = ((int*) data)[0];
+    int stopIndex = ((int*) data)[1];
 
-  while (dontKill) {
-    while (noCollisionCheck[id] == true) {}
-    noCollisionCheck[id] = true;
-    std::set<std::pair<Ped::Crowd*,int> > agents = tree->getAgents();
-    for (auto it = agents.begin(); it != agents.end(); it++) {
-      Ped::Model::doSafeMovementParallel(*it, tree);
+    while (dontKill) {
+        while (noCollisionCheck[id] == true) {}
+        noCollisionCheck[id] = true;
+        for (int i = startIndex; i < stopIndex; i++) {
+            for (int j = 0; j < net.sizeX; j++) {
+                Ped::Model::doSafeMovementParallel(net.net[j][i]);
+            }
+        }
+        collisionCheckNotDone[id] = false;
     }
-    collisionCheckNotDone[id] = false;
-  }
-  delete (collisionThreadData*) data;
-}
-
-std::set<std::pair<Ped::Crowd*, int> > Ped::Model::getNeighbors(int x, int y, 
-								int dist,
-								Ped::Ttree* tree) {
-
-  // create the output list
-  std::list<std::pair<Crowd*, int> > neighborList;
-  getNeighbors(neighborList, x, y, dist, tree);
-
-  // copy the neighbors to a set
-  return std::set<std::pair<Crowd*, int> >(neighborList.begin(), neighborList.end());
-}
-
-void Ped::Model::getNeighbors(std::list<std::pair<Ped::Crowd*, int> >&neightborList, int x, 
-			      int y, int dist, Ped::Ttree* tree) {
-
-  std::stack<Ped::Ttree*> treestack;
-
-  treestack.push(tree);
-  while(!treestack.empty()){
-    Ped::Ttree *t = treestack.top();
-    treestack.pop();
-    if(t->isleaf){
-      t->getAgents(neightborList);
-    }
-    else{
-      if (t->tree1->intersects(x, y, dist)) treestack.push(t->tree1);
-      if (t->tree2->intersects(x, y, dist)) treestack.push(t->tree2);
-      if (t->tree3->intersects(x, y, dist)) treestack.push(t->tree3);
-      if (t->tree4->intersects(x, y, dist)) treestack.push(t->tree4);
-    }
-  }
-
+    delete (collisionThreadData*) data;
 }
 
 void Ped::Model::cleanup() {

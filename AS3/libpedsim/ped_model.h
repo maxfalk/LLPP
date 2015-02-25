@@ -45,7 +45,7 @@ namespace Ped{
     static const int treeDepth = 10;    
 
     // Keeps track of the positions of each agent
-    Ped::Ttree *tree;
+    Ped::Net net;
 
     // Maps the agent to the tree node containing it. Convenience data structure
     // in order to update the tree in case the agent moves.
