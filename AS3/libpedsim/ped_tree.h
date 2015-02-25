@@ -51,8 +51,6 @@ namespace Ped {
     virtual void addChildren();
     Ttree* getChildByPosition(double x, double y);
     int cut();
-    // set and not vector, since we need to delete elements from the middle very often
-    // set and not list, since deletion is based on pointer (search O(log n) instead of O(n)).
 
     bool isleaf;
     double x;
@@ -70,8 +68,6 @@ namespace Ped {
   private:
     std::map<std::pair<Ped::Crowd*, int>, Ped::Ttree*> *treehash;
     std::set<std::pair<Ped::Crowd*, int> > agents;
-       
- 
   };
 }
 

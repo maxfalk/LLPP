@@ -27,7 +27,7 @@ int main(int argc, char*argv[]) {
   int threads = 4;
   bool timing_mode = 0;
   int i = 1;
-  bool parallelCollision = false;
+  bool parallelCollision = true;
   QString scenefile = "scenario.xml";
 
   // Argument handling

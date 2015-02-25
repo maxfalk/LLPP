@@ -51,10 +51,18 @@ namespace Ped{
     // in order to update the tree in case the agent moves.
     std::map<std::pair<Crowd*, int>, Ped::Ttree*> *treehash;
 
-    // Returns the set of neighboring agents for the specified position
-    std::set<std::pair<Ped::Crowd*, int> > getNeighbors(int x, int y, int dist) const;
-    void getNeighbors(std::list<std::pair<Ped::Crowd*, int> >& neighborList, int x, 
-		      int y, int d) const;
+    static void doSafeMovementParallel(std::pair<Ped::Crowd*, int> Agent, 
+				       Ped::Ttree *tree);
+    
+    static void *checkCollisions(void *data);
+    static std::set<std::pair<Ped::Crowd*, int> > getNeighbors(int x, int y, int dist,
+							       Ped::Ttree* tree);
+    
+    static void getNeighbors(std::list<std::pair<Ped::Crowd*, int> >& neighborList, int x, 
+			     int y, int d, Ped::Ttree* tree);
+    
+  
+    
   };
 }
 #endif
