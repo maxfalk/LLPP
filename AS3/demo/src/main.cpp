@@ -21,6 +21,7 @@
 
 
 int main(int argc, char*argv[]) { 
+  printf("h\n");
   Ped::Model model;
   Ped::IMPLEMENTATION mode = Ped::IMPLEMENTATION::SEQ;
   int start_mode = 0;
@@ -74,12 +75,11 @@ int main(int argc, char*argv[]) {
     }
     i+=1;
   }
-  
+
   ParseScenario parser(scenefile, start_mode);
   model.setup(parser.getCrowds(), mode, threads, parallelCollision);  
   QApplication app(argc, argv);
   MainWindow mainwindow(model);
-
   const int delay_ms = 100;
   Timer *timer;
 #define TICK_LIMIT 1000
