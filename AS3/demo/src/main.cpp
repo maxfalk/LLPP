@@ -21,13 +21,14 @@
 
 
 int main(int argc, char*argv[]) { 
+  printf("h\n");
   Ped::Model model;
   Ped::IMPLEMENTATION mode = Ped::IMPLEMENTATION::SEQ;
   int start_mode = 0;
   int threads = 4;
   bool timing_mode = 0;
   int i = 1;
-  bool parallelCollision = true;
+  bool parallelCollision = false;
   QString scenefile = "scenario.xml";
 
   // Argument handling
@@ -37,6 +38,9 @@ int main(int argc, char*argv[]) {
         if(strcmp(&argv[i][2],"timing-mode") == 0) {
             cout << "Timing mode on\n";
             timing_mode = true;
+        } else if (strcmp(&argv[i][2],"region-mode") == 0) {
+            parallelCollision = true;
+            cout << "Region collision mode on\n";
         } else {
             cerr << "Unrecognized command: \"" << argv[i] 
 		 << "\". Ignoring ..." << endl;
@@ -71,12 +75,11 @@ int main(int argc, char*argv[]) {
     }
     i+=1;
   }
-  
+
   ParseScenario parser(scenefile, start_mode);
   model.setup(parser.getCrowds(), mode, threads, parallelCollision);  
   QApplication app(argc, argv);
   MainWindow mainwindow(model);
-
   const int delay_ms = 100;
   Timer *timer;
 #define TICK_LIMIT 1000

@@ -10,7 +10,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 NVCC = nvcc
-SOURCES_CXX = ped_model.cpp ped_tree.cpp ped_crowd.cpp
+SOURCES_CXX = ped_model.cpp ped_net.cpp ped_crowd.cpp
 OBJECTS_CXX = $(SOURCES_CXX:.cpp=.cxx.o)
 
 SOURCES_CU = tick_cuda.cu

@@ -4,12 +4,12 @@
   <waypoint id="w2" x="140" y="60" r="5" />
 
   <!-- agents -->
-  <agent x="10" y="10" n="400" dx="5" dy="5">
+  <agent x="10" y="10" n="10" dx="5" dy="5">
      <addwaypoint id="w2" />
      <addwaypoint id="w1" />
   </agent>
 
-  <agent x="40" y="61" n="400" dx="5" dy="5">
+  <agent x="40" y="61" n="10" dx="5" dy="5">
      <addwaypoint id="w1" />
      <addwaypoint id="w2" />
   </agent>
