@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <math.h>
-//#include <cuda_runtime.h>
+
 //#include "tick_cuda.h"
 #define ELEMINTS_IN_XXAM 4
 
@@ -31,15 +31,12 @@ Ped::Crowd::~Crowd(){
   delete[] CurrentWaypoint;
   delete[] AgentsX;
   delete[] AgentsY;
-  delete[] AgentsZ;
 
   delete[] DesiredX;
   delete[] DesiredY;
-  delete[] DesiredZ;
   
   delete[] MoveForceX;
   delete[] MoveForceY;
-  delete[] MoveForceZ;
   
   delete[] DestinationX;
   delete[] DestinationY;
@@ -58,15 +55,15 @@ void Ped::Crowd::constructor(){
 
   AgentsX = new float[NumberOfAgents];
   AgentsY = new float[NumberOfAgents];
-  AgentsZ = new float[NumberOfAgents];
+
 
   DesiredX = new float[NumberOfAgents];
   DesiredY = new float[NumberOfAgents];
-  DesiredZ = new float[NumberOfAgents];
+
 
   MoveForceX = new float[NumberOfAgents];
   MoveForceY = new float[NumberOfAgents];
-  MoveForceZ = new float[NumberOfAgents];
+
   
   DestinationX = new float[NumberOfAgents];
   DestinationY = new float[NumberOfAgents];
@@ -82,15 +79,12 @@ void Ped::Crowd::constructor_vector(){
 
   vector_alloc((void **)&AgentsX, NumberOfAgents);
   vector_alloc((void **)&AgentsY, NumberOfAgents);
-  vector_alloc((void **)&AgentsZ, NumberOfAgents);
 
   vector_alloc((void **)&DesiredX, NumberOfAgents);
   vector_alloc((void **)&DesiredY, NumberOfAgents);
-  vector_alloc((void **)&DesiredZ, NumberOfAgents);
    
   vector_alloc((void **)&MoveForceX, NumberOfAgents);
   vector_alloc((void **)&MoveForceY, NumberOfAgents);
-  vector_alloc((void **)&MoveForceZ, NumberOfAgents);
    
   vector_alloc((void **)&DestinationX, NumberOfAgents);
   vector_alloc((void **)&DestinationY, NumberOfAgents);
@@ -114,8 +108,7 @@ void Ped::Crowd::init(){
     DestinationR[i] = WaypointR[CurrentWaypoint[i]];
     DesiredX[i] = AgentsX[i];
     DesiredY[i] = AgentsY[i];
-    DesiredZ[i] = AgentsZ[i];
-
+    //    printf("Agent x.y: %f,%f\n",AgentsX[i],AgentsY[i]);
   }
 
 

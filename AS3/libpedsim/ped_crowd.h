@@ -9,16 +9,13 @@ namespace Ped{
     //Agent pos
     float *AgentsX;
     float *AgentsY;
-    float *AgentsZ;
     //Desired pos
     float *DesiredX;
     float *DesiredY;
-    float *DesiredZ;
     //MoveForce per agent arrays of agents
     //correspond to the same pos for moveforce
     float *MoveForceX;
     float *MoveForceY;
-    float *MoveForceZ;
    
     //Waypoints, all the waypoints agents go between.
     float *WaypointX;

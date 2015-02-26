@@ -1,9 +1,9 @@
 #include "ped_model.h"
+#include "ped_net.h"
 #include <pthread.h>
 #include <stdlib.h>
 #include <omp.h>
 #include <iostream>
-//#include <cuda_runtime.h>
 #include <stdio.h>
 #include <stack>
 #include <algorithm>
@@ -13,48 +13,56 @@ volatile bool dontKill;
 pthread_t collisionThreads[COL_THREADS];
 volatile bool noCollisionCheck[COL_THREADS];
 volatile bool collisionCheckNotDone[COL_THREADS];
-//Ped::Net net(800,600);
+Ped::Net *net;
+  
+
+typedef struct{
+  int id;
+  int start;
+  int end;
+} _collisiondata, *collisiondata;
 
 void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, 
 		       IMPLEMENTATION _mode, int _nrOfThreads, bool _parallelCollision) {
+
     nrOfThreads = _nrOfThreads;
     crowds = crowdInScenario;
     implementation = _mode;
     parallelCollision = _parallelCollision;
     crowd = crowds;
     dontKill = true;
+    net = new Net(1000,800);
     for (int i = 0; i < COL_THREADS; i++) {
         noCollisionCheck[i] = true;
         collisionCheckNotDone[i] = true;
     }
 
-    //if(implementation == CUDA){
-    //    for(int i = 0; i < crowds.size(); i++)
-    //      crowds[i]->init_cuda();
-    //}
+    if(implementation == CUDA){
+      for(int i = 0; i < crowds.size(); i++){
+	//crowds[i]->init_cuda();
+      }
+    }
+    
 
-    printf("1\n");
     for (int i = 0; i < crowds.size(); i++) {
-        for (int j = 0; j < crowds[i]->NumberOfAgents; j++) {
-	  std::pair<Crowd*, int> *par = (std::pair<Crowd*, int>*) malloc(sizeof(Crowd*)+sizeof(int));
-	  *par = std::make_pair(crowds[i],j);
-	  net.net[(int)crowds[i]->AgentsX[j]][(int)crowds[i]->AgentsY[j]] = par;
+      Net::Npair par = (Net::Npair) malloc(sizeof(Net::_Npair) * crowds[i]->NumberOfAgents);  	 
+      for (int j = 0; j < crowds[i]->NumberOfAgents; j++) {
+	  par[j].first = crowds[i];
+	  par[j].second = j;
+	  net->field[(int)crowds[i]->AgentsX[j]][(int)crowds[i]->AgentsY[j]] = &par[j];
+	 
         }
     }
-    printf("2\n");
+
+
     if (parallelCollision == true){
-        for (int i = 0; i < COL_THREADS; i++) {
-	  int *indices = (int *) malloc(3*sizeof(int));
-	  indices[0] = (net.sizeY/COL_THREADS)*i;
-	  indices[2] = i;
-	  if (COL_THREADS-i == 1) {
-	    indices[1] = net.sizeY;
-	  } else {
-	    indices[1] = (net.sizeY/COL_THREADS)*(i+1);
-	  }
-	  printf("Creating thread!\n");
-	  pthread_create(&collisionThreads[i], NULL, Ped::Model::checkCollisions, (void*) indices);
-        }
+      for (int i = 0; i < COL_THREADS; i++) {
+	collisiondata data = (collisiondata) malloc(sizeof(_collisiondata));
+	data->id = i;
+	data->start = (net->sizeY/COL_THREADS)*i;
+	data->end = (net->sizeY/COL_THREADS)*(i+1);
+	pthread_create(&collisionThreads[i], NULL, Ped::Model::checkCollisions, (void*) data);
+      }
     }
 }
 const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
@@ -62,15 +70,15 @@ const std::vector<Ped::Crowd*> Ped::Model::getCrowds() const
     return crowds;
 }
 
-void *threaded_tick(void *inds) {
+void *Ped::Model::threaded_tick(void *inds) {
     //Pthread here
     int *indices = (int *) inds;
     int startIndex = indices[0];
     int stopIndex = indices[1];
     for (int i = 0; i < crowd.size(); i++) {
         for (int j = startIndex; j < stopIndex; j++) {
-            crowd[i]->where_to_go(j);
-            crowd[i]->go(j);
+	  crowd[i]->where_to_go(j);
+	  crowd[i]->go(j);
         }
     }
 }
@@ -85,7 +93,7 @@ void Ped::Model::seq()
    }
 
 }
-void create_threads(int nrOfThreads) {
+void Ped::Model::create_threads(int nrOfThreads) {
   pthread_t threads[nrOfThreads];
   for (int i=0; i<nrOfThreads; i++) {
     int *indices = (int *) malloc(2*sizeof(int));
@@ -134,16 +142,16 @@ void Ped::Model::vector()
    }
 
 }
-//void Ped::Model::cuda(){
-//
-//  
-//  for(int i = 0; i < crowds.size(); i++){
-//    crowds[i]->where_to_go_cuda();
-//    crowds[i]->go_cuda();
-//  }
-//
-//
-//}
+void Ped::Model::cuda(){
+
+  
+  for(int i = 0; i < crowds.size(); i++){
+    //crowds[i]->where_to_go_cuda();
+    //crowds[i]->go_cuda();
+  }
+
+
+}
 void Ped::Model::tick()
 {
 
@@ -153,8 +161,8 @@ void Ped::Model::tick()
     pThreads();
   }else if (implementation == VECTOR){
     vector();
-  //}else if(implementation == CUDA){ 
-  //  cuda();
+  }else if(implementation == CUDA){ 
+    cuda();
   }else {
     omp();
   }
@@ -170,10 +178,12 @@ void Ped::Model::tick()
     }
   }else{
 
+    Net::_Npair par;
     for(int i = 0; i < crowds.size(); i++){
       for(int j = 0; j < crowds[i]->NumberOfAgents; j++){
-	std::pair<Ped::Crowd*, int> par(crowds[i],j);
-	doSafeMovment(&par);      
+	par.first = crowds[i];
+	par.second = j;
+	doSafeMovement(&par);      
       }
     }
   }
@@ -183,7 +193,7 @@ void Ped::Model::tick()
 
 }
 
-void Ped::Model::doSafeMovment(std::pair<Ped::Crowd*, int> *Agent){
+void Ped::Model::doSafeMovement(Net::Npair Agent){
 
 
  std::vector<std::pair<int, int> > prioritizedAlternatives;
@@ -210,34 +220,30 @@ void Ped::Model::doSafeMovment(std::pair<Ped::Crowd*, int> *Agent){
   prioritizedAlternatives.push_back(p2);
 
 
-  //Search for neighboring agents
-    std::vector<std::pair<Ped::Crowd*, int>* > neighbors;
-    net.get_neighbors(Agent->first->AgentsX[Agent->second], 
-		 Agent->first->AgentsY[Agent->second], &neighbors);
-
-
   //Find an empty spot of the once computed to move to
   for(int i=0; i < prioritizedAlternatives.size(); i++){
     bool taken = false;
-    for(auto it = neighbors.begin(); it != neighbors.end(); ++it){
+    if(prioritizedAlternatives[i].first >= 0 && 
+       prioritizedAlternatives[i].second >= 0 &&
+       prioritizedAlternatives[i].first < net->sizeX && 
+       prioritizedAlternatives[i].second <  net->sizeY){
       
-      if((*it)->first->AgentsX[(*it)->second] == prioritizedAlternatives[i].first and
-	 (*it)->first->AgentsY[(*it)->second] == prioritizedAlternatives[i].second){
-	taken = true;
-      }
+    if(net->field[prioritizedAlternatives[i].first][prioritizedAlternatives[i].second] != NULL){
+      taken = true;
     }
     
     if(taken == false){
-        net.net[prioritizedAlternatives[i].first][prioritizedAlternatives[i].second] = Agent;
-        net.net[(int)Agent->first->AgentsX[Agent->second]][(int)Agent->first->AgentsY[Agent->second]]=NULL;
+        net->field[prioritizedAlternatives[i].first][prioritizedAlternatives[i].second] = Agent;
+        net->field[(int)Agent->first->AgentsX[Agent->second]][(int)Agent->first->AgentsY[Agent->second]]=NULL;
         Agent->first->AgentsX[Agent->second] = prioritizedAlternatives[i].first;
         Agent->first->AgentsY[Agent->second] = prioritizedAlternatives[i].second;
         break;
-    }    
+    } 
+    }   
   }
 
 }
-void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> *Agent) {
+void Ped::Model::doSafeMovementParallel(Net::Npair Agent) {
 
   std::vector<std::pair<int, int> > prioritizedAlternatives;
   std::pair<int,int> pDesired(Agent->first->DesiredX[Agent->second], 
@@ -263,57 +269,63 @@ void Ped::Model::doSafeMovementParallel(std::pair<Ped::Crowd*, int> *Agent) {
   prioritizedAlternatives.push_back(p2);
 
 
-
-  //Search for neighboring agents
-  std::vector<std::pair<Ped::Crowd*, int>* > neighbors;
-  net.get_neighbors(Agent->first->AgentsX[Agent->second], 
-		 Agent->first->AgentsY[Agent->second], &neighbors);
-
-  //Find an empty spot of the once computed to move to
+ //Find an empty spot of the once computed to move to
   for(int i=0; i < prioritizedAlternatives.size(); i++){
-    bool taken = false;
-
-    for(auto it = neighbors.begin(); it != neighbors.end(); ++it){
+    if(prioritizedAlternatives[i].first >= 0 && 
+       prioritizedAlternatives[i].second >= 0 &&
+       prioritizedAlternatives[i].first < net->sizeX && 
+       prioritizedAlternatives[i].second <  net->sizeY){
       
-      if((*it)->first->AgentsX[(*it)->second] == prioritizedAlternatives[i].first and
-	 (*it)->first->AgentsY[(*it)->second] == prioritizedAlternatives[i].second){
-	taken = true;
+      bool successfulSwap = net->take_pos_atomic(prioritizedAlternatives[i].first, 
+					       prioritizedAlternatives[i].second, Agent);
+      if (successfulSwap) {
+	int x = Agent->first->AgentsX[Agent->second];
+	int y = Agent->first->AgentsY[Agent->second];
+	Agent->first->AgentsX[Agent->second] = prioritizedAlternatives[i].first;
+	Agent->first->AgentsY[Agent->second] = prioritizedAlternatives[i].second;
+	net->field[x][y] = NULL;
+	break;  
       }
     }
-    
-    if(taken == false){
-      bool successfulSwap = net.take_pos_atomic(prioritizedAlternatives[i].first, 
-						prioritizedAlternatives[i].second, Agent);
-        if (successfulSwap) {
-	  net.net[(int)Agent->first->AgentsX[Agent->second]][(int)Agent->first->AgentsY[Agent->second]] = NULL;
-            Agent->first->AgentsX[Agent->second] = prioritizedAlternatives[i].first;
-            Agent->first->AgentsY[Agent->second] = prioritizedAlternatives[i].second;
-            break;
-        }
-    }
-
   }    
 }
 void *Ped::Model::checkCollisions(void *data) {
-    int startIndex = ((int*) data)[0];
-    int stopIndex = ((int*) data)[1];
-    int id = ((int*) data)[2];
-    while (dontKill) {
-        while (noCollisionCheck[id] == true) {}
-        noCollisionCheck[id] = true;
-        for (int i = startIndex; i < stopIndex; i++) {
-            for (int j = 0; j < net.sizeX; j++) {
-                Ped::Model::doSafeMovementParallel(net.net[j][i]);
-            }
-        }
-        collisionCheckNotDone[id] = false;
+
+  int startIndex = ((collisiondata)data)->start;
+  int stopIndex = ((collisiondata)data)->end;
+  int id = ((collisiondata)data)->id;
+  printf("start %d: %d\n", id, startIndex);
+  printf("stop %d: %d\n", id, stopIndex);
+  while (dontKill) {
+    while (noCollisionCheck[id] == true) {}
+    noCollisionCheck[id] = true;
+    for (int i = startIndex; i < stopIndex; i++) {
+      for (int j = 0; j < net->sizeX; j++) {
+	Net::Npair Agent = net->field[j][i];
+	if(Agent != NULL){
+	  if(Agent->first->AgentsY[Agent->second] >= stopIndex-1 or
+	     Agent->first->AgentsY[Agent->second] <= startIndex-1){
+	    
+	    doSafeMovementParallel(Agent);
+	  }else{
+	    doSafeMovement(Agent);
+	  }
+
+	}
+      }
     }
-    delete [] data;
+    collisionCheckNotDone[id] = false;
+  }
+  free(data);
 }
 
 void Ped::Model::cleanup() {
   if (parallelCollision) {
     dontKill = false;
+    for (int i = 0; i < COL_THREADS; i++) {
+      noCollisionCheck[i] = false;
+    }
+
     for (int i = 0; i < COL_THREADS; i++) {
       pthread_join(collisionThreads[i], NULL);
     }
