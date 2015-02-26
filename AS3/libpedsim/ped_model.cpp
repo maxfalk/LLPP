@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stack>
 #include <algorithm>
+#include <assert.h>
 
 std::vector<Ped::Crowd*> crowd;
 volatile bool dontKill;
@@ -187,6 +188,25 @@ void Ped::Model::tick()
       }
     }
   }
+  // int totalOfAgents = 0;
+  // int actualAgents = 0;
+  // for(int i = 0; i < crowds.size(); i++){
+  //   totalOfAgents += crowds[i]->NumberOfAgents;
+  //   }
+  //    omp_set_dynamic(0);
+  //   omp_set_num_threads(nrOfThreads);
+  // //OMP here
+    
+  //   for (int i = 0; i < net->sizeX; i++) {
+  //       #pragma omp parallel for reduction (+:actualAgents)
+  //       for (int j = 0; j < net->sizeY; j++) {
+  //           if (net->field[i][j] != NULL) {
+  //               actualAgents++;
+  //           }
+  //       }
+  //   }
+    
+  //   assert(totalOfAgents == actualAgents);
 
 
 
