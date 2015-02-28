@@ -14,14 +14,11 @@ volatile bool dontKill;
 pthread_t collisionThreads[COL_THREADS];
 volatile bool noCollisionCheck[COL_THREADS];
 volatile bool collisionCheckNotDone[COL_THREADS];
+int ThreadsWork[COL_THREADS];
+int startIndex[COL_THREADS];
+int stopIndex[COL_THREADS];
+int balanceSpeed[COL_THREADS];
 Ped::Net *net;
-  
-
-typedef struct{
-  int id;
-  int start;
-  int end;
-} _collisiondata, *collisiondata;
 
 void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, 
 		       IMPLEMENTATION _mode, int _nrOfThreads, bool _parallelCollision) {
@@ -32,7 +29,7 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario,
     parallelCollision = _parallelCollision;
     crowd = crowds;
     dontKill = true;
-    net = new Net(1000,800);
+    net = new Net(400,400);
     for (int i = 0; i < COL_THREADS; i++) {
         noCollisionCheck[i] = true;
         collisionCheckNotDone[i] = true;
@@ -57,12 +54,11 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario,
 
 
     if (parallelCollision == true){
+      int *id = new int[COL_THREADS];
       for (int i = 0; i < COL_THREADS; i++) {
-	collisiondata data = (collisiondata) malloc(sizeof(_collisiondata));
-	data->id = i;
-	data->start = (net->sizeY/COL_THREADS)*i;
-	data->end = (net->sizeY/COL_THREADS)*(i+1);
-	pthread_create(&collisionThreads[i], NULL, Ped::Model::checkCollisions, (void*) data);
+	balanceSpeed[i] = 1;
+	id[i] = i;
+	pthread_create(&collisionThreads[i], NULL, Ped::Model::checkCollisions, (void*) &id[i]);
       }
     }
 }
@@ -170,6 +166,7 @@ void Ped::Model::tick()
 
 
   if (parallelCollision) {
+    //Run threads
     for (int i = 0; i < COL_THREADS; i++) {
       noCollisionCheck[i] = false;
     }
@@ -177,6 +174,22 @@ void Ped::Model::tick()
       while(collisionCheckNotDone[i]) {}
       collisionCheckNotDone[i] = true;
     }
+    //Naive load balance
+    //JIT load blancing
+    for(int i=0; i< COL_THREADS; i++){
+      int acc = 0;
+      if(i > 0 and ThreadsWork[i-1] > ThreadsWork[i]){
+	startIndex[i] -= 1;
+	stopIndex[i-1] -=1;
+      }
+
+      if(i < COL_THREADS-1 and ThreadsWork[i+1] > ThreadsWork[i]){
+	stopIndex[i] += 1;
+	startIndex[i+1] += 1;	
+      }
+      
+    }
+
   }else{
 
     Net::_Npair par;
@@ -188,26 +201,27 @@ void Ped::Model::tick()
       }
     }
   }
-  // int totalOfAgents = 0;
-  // int actualAgents = 0;
-  // for(int i = 0; i < crowds.size(); i++){
-  //   totalOfAgents += crowds[i]->NumberOfAgents;
-  //   }
-  //    omp_set_dynamic(0);
-  //   omp_set_num_threads(nrOfThreads);
-  // //OMP here
+  /*
+   int totalOfAgents = 0;
+   int actualAgents = 0;
+   for(int i = 0; i < crowds.size(); i++){
+     totalOfAgents += crowds[i]->NumberOfAgents;
+     }
+      omp_set_dynamic(0);
+     omp_set_num_threads(nrOfThreads);
+   //OMP here
     
-  //   for (int i = 0; i < net->sizeX; i++) {
-  //       #pragma omp parallel for reduction (+:actualAgents)
-  //       for (int j = 0; j < net->sizeY; j++) {
-  //           if (net->field[i][j] != NULL) {
-  //               actualAgents++;
-  //           }
-  //       }
-  //   }
-    
-  //   assert(totalOfAgents == actualAgents);
-
+     for (int i = 0; i < net->sizeX; i++) {
+        #pragma omp parallel for reduction (+:actualAgents)
+         for (int j = 0; j < net->sizeY; j++) {
+            if (net->field[i][j] != NULL) {
+                 actualAgents++;
+             }
+         }
+     }
+     
+     assert(totalOfAgents == actualAgents);
+  */
 
 
 
@@ -311,32 +325,36 @@ void Ped::Model::doSafeMovementParallel(Net::Npair Agent) {
 }
 void *Ped::Model::checkCollisions(void *data) {
 
-  int startIndex = ((collisiondata)data)->start;
-  int stopIndex = ((collisiondata)data)->end;
-  int id = ((collisiondata)data)->id;
-  printf("start %d: %d\n", id, startIndex);
-  printf("stop %d: %d\n", id, stopIndex);
+  int id = *((int*) data);
+  startIndex[id] = (net->sizeY/COL_THREADS)*id;
+  stopIndex[id] = (net->sizeY/COL_THREADS)*(id+1);
+
   while (dontKill) {
     while (noCollisionCheck[id] == true) {}
     noCollisionCheck[id] = true;
-    for (int i = startIndex; i < stopIndex; i++) {
+    ThreadsWork[id] = 0;
+    //printf("start %d: %d\n", id, startIndex[id]);
+    //printf("stop %d: %d\n", id, stopIndex[id]);
+
+    for (int i = startIndex[id]; i < stopIndex[id]; i++) {
       for (int j = 0; j < net->sizeX; j++) {
 	Net::Npair Agent = net->field[j][i];
 	if(Agent != NULL){
-	  if(Agent->first->AgentsY[Agent->second] >= stopIndex-1 or
-	     Agent->first->AgentsY[Agent->second] <= startIndex-1){
+	  ThreadsWork[id]++;
+	  if(Agent->first->AgentsY[Agent->second] >= (stopIndex[id]-1) or
+	     Agent->first->AgentsY[Agent->second] <= (startIndex[id]-1)){
 	    
-	    doSafeMovementParallel(Agent);
+	      doSafeMovementParallel(Agent);
 	  }else{
 	    doSafeMovement(Agent);
 	  }
-
 	}
       }
     }
     collisionCheckNotDone[id] = false;
   }
-  free(data);
+  if(id == 0)
+    free(data);
 }
 
 void Ped::Model::cleanup() {
