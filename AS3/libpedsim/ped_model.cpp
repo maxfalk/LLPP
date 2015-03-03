@@ -15,8 +15,10 @@ pthread_t collisionThreads[COL_THREADS];
 volatile bool noCollisionCheck[COL_THREADS];
 volatile bool collisionCheckNotDone[COL_THREADS];
 int ThreadsWork[COL_THREADS];
-int startIndex[COL_THREADS];
-int stopIndex[COL_THREADS];
+int startIndexX[COL_THREADS];
+int stopIndexX[COL_THREADS];
+int startIndexY[COL_THREADS];
+int stopIndexY[COL_THREADS];
 int balanceSpeed[COL_THREADS];
 Ped::Net *net;
 
@@ -176,19 +178,29 @@ void Ped::Model::tick()
     }
     //Naive load balance
     //JIT load blancing
-    for(int i=0; i< COL_THREADS; i++){
-      int acc = 0;
-      if(i > 0 and ThreadsWork[i-1] > ThreadsWork[i]){
-	startIndex[i] -= 1;
-	stopIndex[i-1] -=1;
-      }
+      //int acc = 0;
+      //int diff1 = abs(ThreadsWork[0]-ThreadsWork[1]);
+      //if(diff1 > 5){
+      //  if (ThreadsWork[0] > ThreadsWork[1]) {
+      //      startIndexX[1] -= 5;
+      //      stopIndexX[0] -= 5;
+      //  } else {
+      //      startIndexX[1] += 5;
+      //      stopIndexX[0] += 5;
+      //  }
+      //}
 
-      if(i < COL_THREADS-1 and ThreadsWork[i+1] > ThreadsWork[i]){
-	stopIndex[i] += 1;
-	startIndex[i+1] += 1;	
-      }
+      //int diff2 = abs(ThreadsWork[2]-ThreadsWork[3]);
+      //if(diff2 > 5){
+      //  if (ThreadsWork[2] > ThreadsWork[3]) {
+      //      startIndexX[3] -= 1;	
+      //      stopIndexX[2] -= 1;
+      //  } else {
+      //      startIndexX[3] += 1;	
+      //      stopIndexX[2] += 1;
+      //  }
+      //}
       
-    }
 
   }else{
 
@@ -326,8 +338,10 @@ void Ped::Model::doSafeMovementParallel(Net::Npair Agent) {
 void *Ped::Model::checkCollisions(void *data) {
 
   int id = *((int*) data);
-  startIndex[id] = (net->sizeY/COL_THREADS)*id;
-  stopIndex[id] = (net->sizeY/COL_THREADS)*(id+1);
+  startIndexX[id] = (net->sizeX/2)*(id%2);
+  stopIndexX[id] = (net->sizeX/2)*((id%2)+1);
+  startIndexY[id] = (net->sizeY/2)*(id%2);
+  stopIndexY[id] = (net->sizeY/2)*((id%2)+1);
 
   while (dontKill) {
     while (noCollisionCheck[id] == true) {}
@@ -336,13 +350,15 @@ void *Ped::Model::checkCollisions(void *data) {
     //printf("start %d: %d\n", id, startIndex[id]);
     //printf("stop %d: %d\n", id, stopIndex[id]);
 
-    for (int i = startIndex[id]; i < stopIndex[id]; i++) {
-      for (int j = 0; j < net->sizeX; j++) {
+    for (int i = startIndexX[id]; i < stopIndexX[id]; i++) {
+      for (int j = startIndexY[id]; j < stopIndexY[id]; j++) {
 	Net::Npair Agent = net->field[j][i];
 	if(Agent != NULL){
 	  ThreadsWork[id]++;
-	  if(Agent->first->AgentsY[Agent->second] >= (stopIndex[id]-1) or
-	     Agent->first->AgentsY[Agent->second] <= (startIndex[id]-1)){
+	  if(Agent->first->AgentsY[Agent->second] >= (stopIndexX[id]-1) or
+	     Agent->first->AgentsY[Agent->second] <= (startIndexX[id]-1) or
+         Agent->first->AgentsY[Agent->second] >= (stopIndexX[id]-1) or
+         Agent->first->AgentsY[Agent->second] <= (startIndexY[id]-1)){
 	    
 	      doSafeMovementParallel(Agent);
 	  }else{
