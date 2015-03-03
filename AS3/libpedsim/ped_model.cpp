@@ -357,7 +357,7 @@ void *Ped::Model::checkCollisions(void *data) {
 	  ThreadsWork[id]++;
 	  if(Agent->first->AgentsY[Agent->second] >= (stopIndexX[id]-1) or
 	     Agent->first->AgentsY[Agent->second] <= (startIndexX[id]-1) or
-         Agent->first->AgentsY[Agent->second] >= (stopIndexX[id]-1) or
+         Agent->first->AgentsY[Agent->second] >= (stopIndexY[id]-1) or
          Agent->first->AgentsY[Agent->second] <= (startIndexY[id]-1)){
 	    
 	      doSafeMovementParallel(Agent);
