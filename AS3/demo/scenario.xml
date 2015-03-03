@@ -5,12 +5,12 @@
 
   <!-- agents -->
   <agent x="0" y="60" n="2000" dx="40" dy="60">
-    <addwaypoint id="w1" />
     <addwaypoint id="w2" />
+    <addwaypoint id="w1" />
   </agent>
 
   <agent x="160" y="60" n="2000" dx="50" dy="30">
-    <addwaypoint id="w2" />
     <addwaypoint id="w1" />
+    <addwaypoint id="w2" />
   </agent>
 </welcome>

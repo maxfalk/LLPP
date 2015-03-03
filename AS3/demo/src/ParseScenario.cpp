@@ -5,7 +5,7 @@
 //
 // Adapted for Low Level Parallel Programming 2015
 //
-
+#include <assert.h>
 #include "ParseScenario.h"
 #include <string>
 #include <stdio.h>
@@ -97,7 +97,7 @@ void ParseScenario::handleWaypoint()
   Waypoints[id] = WaypointsX.size()-1;
  
 }
-bool ParseScenario::checkForDuplicates(vector<float> TempxPos, vector<float> TempyPos, 
+bool ParseScenario::checkForDuplicates(vector<int> TempxPos, vector<int> TempyPos, 
 				       int x, int y){
   bool duplicate = false;
   for(uint i=0;i < TempxPos.size();i++){
@@ -118,15 +118,16 @@ void ParseScenario::handleAgent()
   int n = readFloat("n");
   float dx = readFloat("dx");
   float dy = readFloat("dy");
-  vector<float> TempxPos;
-  vector<float> TempyPos;
+  vector<int> TempxPos;
+  vector<int> TempyPos;
   
   for(int i = 0; i < n;i++){
     int xPos = x + qrand()/(RAND_MAX/dx) -dx/2;
     int yPos = y + qrand()/(RAND_MAX/dy) -dy/2;
-    if(checkForDuplicates(TempxPos, TempyPos, xPos, yPos) == false){
-      TempxPos.push_back((float)xPos);
-      TempyPos.push_back((float)yPos);
+    if(checkForDuplicates(TempxPos, TempyPos, xPos, yPos) == false &&
+	xPos >=0 && yPos >=0){
+      TempxPos.push_back(xPos);
+      TempyPos.push_back(yPos);
     }
       
   }
@@ -135,8 +136,10 @@ void ParseScenario::handleAgent()
   
   Ped::Crowd *crowd = new Ped::Crowd(TempxPos.size(), WaypointsX.size(), vector_mode);  
   for(uint i = 0; i < TempxPos.size(); i++){
-    crowd->AgentsX[i] = TempxPos[i];
-    crowd->AgentsY[i] = TempyPos[i];
+    assert(TempxPos[i] >= 0);
+    assert(TempyPos[i] >= 0);
+    crowd->AgentsX[i] = (float)TempxPos[i];
+    crowd->AgentsY[i] = (float)TempyPos[i];
   }
 
   crowds.push_back(crowd);

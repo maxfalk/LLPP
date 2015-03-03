@@ -19,6 +19,8 @@ namespace Ped{
 
     void cleanup();
     //~Model();
+
+
   private:
     int nrOfThreads;
     IMPLEMENTATION implementation;
@@ -28,20 +30,18 @@ namespace Ped{
     void seq();
     void pThreads();
     void vector();
-    //void cuda();
-   
+    void cuda();
 
-    void doSafeMovment(std::pair<Ped::Crowd*, int> *Agent);
-    // The maximum quadtree depth
-    static const int treeDepth = 10;    
-
-
-    static void doSafeMovementParallel(std::pair<Ped::Crowd*, int> *Agent);
-    
+    static void doSafeMovement(Net::Npair Agent);
+    static void doSafeMovementParallel(Net::Npair Agent);    
     static void *checkCollisions(void *data);
-    
-  
+    void create_threads(int nrOfThreads);
+    static void *threaded_tick(void *inds);
+
     
   };
+  
+  
+
 }
 #endif

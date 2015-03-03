@@ -8,9 +8,7 @@
 #include <QApplication>
 #include <QTimer>
 #include <thread>
-
 #include <unistd.h>
-
 #include "Timer.h"
 #include <iostream>
 #include <chrono>
@@ -21,7 +19,7 @@
 
 
 int main(int argc, char*argv[]) { 
-  printf("h\n");
+  printf("Started prog\n");
   Ped::Model model;
   Ped::IMPLEMENTATION mode = Ped::IMPLEMENTATION::SEQ;
   int start_mode = 0;
@@ -69,6 +67,9 @@ int main(int argc, char*argv[]) {
                 threads = 4;
             }
 	    cout << threads << " threads selected." << endl;      
+        } else if (strcmp(&argv[i][1], "col") == 0) {
+            parallelCollision = true;
+	    cout << "Paralell collision detection." << endl;      
         }
     } else { // Assume it is a path to scenefile
         scenefile = argv[i];
@@ -80,7 +81,8 @@ int main(int argc, char*argv[]) {
   model.setup(parser.getCrowds(), mode, threads, parallelCollision);  
   QApplication app(argc, argv);
   MainWindow mainwindow(model);
-  const int delay_ms = 100;
+ 
+const int delay_ms = 100;
   Timer *timer;
 #define TICK_LIMIT 1000
 #define AS_FAST_AS_POSSIBLE 0
@@ -119,4 +121,5 @@ int main(int argc, char*argv[]) {
   model.cleanup();
   delete (timer);
   return retval;
+
 }

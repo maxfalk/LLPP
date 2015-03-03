@@ -6,54 +6,62 @@
 using namespace Ped;
 
 Ped::Net::Net(int x, int y){
-  printf("he");
-  int sizeX = x;
-  int sizeY = y;
-  net = new std::pair<Crowd*, int>**[x];
-  for(int i = 0; i < x; i++){
-    net[i] = new std::pair<Crowd*, int>*[y];
-  }
 
-  for(int i = 0; i < sizeX; i++){
-    for(int j = 0; j < sizeY; i++){
-      net[j][j] = NULL;
-    }
-  }
-
+  field = NULL;
+  sizeY = 0;
+  sizeX = 0;
+  init(x, y);
 
 }
-
 Ped::Net::~Net(){
 
   for(int i = 0; i < sizeX; i++){
     for(int j = 0; j < sizeY; i++){
-      delete net[i][j];
+      delete field[i][j];
     }
   }
 
-  delete[] *net;
-  delete[] net;
+  delete[] *field;
+  delete[] field;
 
 }
-bool Ped::Net::take_pos_atomic(int x, int y, std::pair<Ped::Crowd*, int> *newVal){
+void Ped::Net::init(int x, int y){
 
-  return __sync_bool_compare_and_swap(&net[x][y],NULL, newVal);
+  sizeX = x;
+  sizeY = y;
+  field = (Npair **)malloc(sizeof(Npair*)*sizeX);
+
+  
+  for(int i = 0; i < sizeX; i++){
+    field[i] = (Npair*) malloc(sizeof(Npair) * sizeY);
+  }
+
+  for(int i = 0; i < sizeX; i++){
+    for(int j = 0; j < sizeY; j++){
+      field[i][j] = NULL;
+    }
+  }
 
 }
-void Ped::Net::get_neighbors(int x, int y, std::vector< std::pair<Ped::Crowd*, int>* >* neighbors){
 
-  if(y > 0)
-    neighbors->push_back(net[x][y-1]);
-  if(x > 0)
-    neighbors->push_back(net[x-1][y]);
-  if(y > 0 && x > 0)
-    neighbors->push_back(net[x-1][y-1]);
-  if(y < sizeY)
-    neighbors->push_back(net[x][y+1]);
-  if(x < sizeX)
-    neighbors->push_back(net[x+1][y]);
-  if(y < sizeY && x < sizeX)
-    neighbors->push_back(net[x+1][y+1]);
+bool Ped::Net::take_pos_atomic(int x, int y, Npair newVal){
+
+  return __sync_bool_compare_and_swap(&field[x][y], NULL, newVal);
+}
+void Ped::Net::get_neighbors(int x, int y, std::vector<Npair>* neighbors){
+
+  if(y > 0 && field[x][y-1] != NULL)
+    neighbors->push_back(field[x][y-1]);
+  if(x > 0 && field[x-1][y] != NULL)
+    neighbors->push_back(field[x-1][y]);
+  if(y > 0 && x > 0 && field[x-1][y-1] != NULL)
+    neighbors->push_back(field[x-1][y-1]);
+  if(y < sizeY && field[x][y+1] != NULL)
+    neighbors->push_back(field[x][y+1]);
+  if(x < sizeX && field[x+1][y] != NULL)
+    neighbors->push_back(field[x+1][y]);
+  if(y < sizeY && x < sizeX && field[x+1][y+1] != NULL)
+    neighbors->push_back(field[x+1][y+1]);
 
 }
 
