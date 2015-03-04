@@ -20,6 +20,7 @@ int stopIndexX[COL_THREADS];
 int startIndexY[COL_THREADS];
 int stopIndexY[COL_THREADS];
 int balanceSpeed[COL_THREADS];
+int lbTime;
 Ped::Net *net;
 
 void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, 
@@ -178,30 +179,24 @@ void Ped::Model::tick()
     }
     //Naive load balance
     //JIT load blancing
-      //int acc = 0;
-      //int diff1 = abs(ThreadsWork[0]-ThreadsWork[1]);
-      //if(diff1 > 5){
-      //  if (ThreadsWork[0] > ThreadsWork[1]) {
-      //      startIndexX[1] -= 5;
-      //      stopIndexX[0] -= 5;
-      //  } else {
-      //      startIndexX[1] += 5;
-      //      stopIndexX[0] += 5;
-      //  }
-      //}
-
-      //int diff2 = abs(ThreadsWork[2]-ThreadsWork[3]);
-      //if(diff2 > 5){
-      //  if (ThreadsWork[2] > ThreadsWork[3]) {
-      //      startIndexX[3] -= 1;	
-      //      stopIndexX[2] -= 1;
-      //  } else {
-      //      startIndexX[3] += 1;	
-      //      stopIndexX[2] += 1;
-      //  }
-      //}
-      
-
+      if (lbTime == 5) {
+          int diff = abs((ThreadsWork[0]+ThreadsWork[2])-(ThreadsWork[1]+ThreadsWork[3]));
+          if(diff > 10){
+            if ((ThreadsWork[0]+ThreadsWork[2]) > (ThreadsWork[1]+ThreadsWork[3])) {
+                stopIndexX[0] -= 1;
+                startIndexX[1] -= 1;
+                stopIndexX[2] -= 1;
+                startIndexX[3] -= 1;
+            } else {
+                stopIndexX[0] += 1;
+                startIndexX[1] += 1;
+                stopIndexX[2] += 1;
+                startIndexX[3] += 1;
+            }
+          }
+        lbTime = 0;
+    }
+    lbTime++;
   }else{
 
     Net::_Npair par;
@@ -338,10 +333,32 @@ void Ped::Model::doSafeMovementParallel(Net::Npair Agent) {
 void *Ped::Model::checkCollisions(void *data) {
 
   int id = *((int*) data);
-  startIndexX[id] = (net->sizeX/2)*(id%2);
-  stopIndexX[id] = (net->sizeX/2)*((id%2)+1);
-  startIndexY[id] = (net->sizeY/2)*(id%2);
-  stopIndexY[id] = (net->sizeY/2)*((id%2)+1);
+  switch (id) {
+    case 0:
+      startIndexX[id] = 0;
+      stopIndexX[id] = (net->sizeX)/2;
+      startIndexY[id] = 0;
+      stopIndexY[id] = (net->sizeY)/2;
+      break;
+    case 1:
+      startIndexX[id] = (net->sizeX)/2;
+      stopIndexX[id] = net->sizeY;
+      startIndexY[id] = 0;
+      stopIndexY[id] = (net->sizeY)/2;
+      break;
+    case 2:
+      startIndexX[id] = 0;
+      stopIndexX[id] = (net->sizeY)/2;
+      startIndexY[id] = (net->sizeX)/2;
+      stopIndexY[id] = net->sizeY;
+      break;
+    case 3:
+      startIndexX[id] = (net->sizeX)/2;
+      stopIndexX[id] = net->sizeY;
+      startIndexY[id] = (net->sizeX)/2;
+      stopIndexY[id] = net->sizeY;
+      break;
+  }
 
   while (dontKill) {
     while (noCollisionCheck[id] == true) {}
