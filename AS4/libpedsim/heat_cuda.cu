@@ -95,10 +95,6 @@ void kernel_setup_heat_map(int *d_heatmap){
   dim3 blockHeat(16,16);
   dim3 gridHeat((SIZE+15)/16,(SIZE+15)/16);
   setup_heat_map<<<gridHeat, blockHeat>>>(d_heatmap);
-
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) 
-    printf("Error in setup heat map: %s\n", cudaGetErrorString(err));
   
 }
 void kernal_update_heat_map(int *d_heatmap, int *d_scaled_heatmap, 
@@ -110,12 +106,7 @@ void kernal_update_heat_map(int *d_heatmap, int *d_scaled_heatmap,
   dim3 blockHeat(16,16);
   dim3 gridHeat((SIZE+15)/16,(SIZE+15)/16);
   update_heat_map<<<gridHeat, blockHeat>>>(d_heatmap);
-
-  #if debug
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) 
-    printf("Error in update_heat_map: %s\n", cudaGetErrorString(err));
- #endif
+ 
   //-----------------------------------------------------
   int threads = 512;
   while(Agents % threads != 0)
@@ -125,35 +116,18 @@ void kernal_update_heat_map(int *d_heatmap, int *d_scaled_heatmap,
 					     d_DesiredX,
 					     d_DesiredY,
 					     Agents);
-  #if debug
-  err = cudaGetLastError();
-  if (err != cudaSuccess) 
-    printf("Error in update_heat_map_intes: %s\n", cudaGetErrorString(err));
-  #endif
   //-----------------------------------------------------
   dim3 blockHeatNorm(16,16);
   dim3 gridHeatNorm((SIZE+15)/16,(SIZE+15)/16);
   update_heat_map_norm<<<gridHeatNorm, blockHeatNorm>>>(d_heatmap,
 							d_scaled_heatmap);
- #if debug
-  err = cudaGetLastError();
-  if (err != cudaSuccess) 
-    printf("Error in update_heat_map_norm: %s\n", cudaGetErrorString(err));
- #endif
 
-  //-----------------------------------------------------------------------
- 
   //------------------------------------------------------------------------
   //update blurr
   dim3 blockBlurr(16,16);
   dim3 gridBlurr((SCALED_SIZE+15)/16,(SCALED_SIZE+15)/16);
-
   update_blurr_map<<<gridBlurr, blockBlurr>>>(d_scaled_heatmap, 
 					      d_blurred_heatmap);
- #if debug
-  err = cudaGetLastError();
-  if (err != cudaSuccess) 
-    printf("Error in update_blurr_map: %s\n", cudaGetErrorString(err));
-  #endif
+
 }
 
