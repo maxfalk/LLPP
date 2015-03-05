@@ -36,9 +36,6 @@ int main(int argc, char*argv[]) {
         if(strcmp(&argv[i][2],"timing-mode") == 0) {
             cout << "Timing mode on\n";
             timing_mode = true;
-        } else if (strcmp(&argv[i][2],"region-mode") == 0) {
-            parallelCollision = true;
-            cout << "Region collision mode on\n";
         } else {
             cerr << "Unrecognized command: \"" << argv[i] 
 		 << "\". Ignoring ..." << endl;
