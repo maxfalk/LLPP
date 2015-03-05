@@ -64,7 +64,7 @@ int main(int argc, char*argv[]) {
                 threads = 4;
             }
 	    cout << threads << " threads selected." << endl;      
-        } else if (strcmp(&argv[i][1], "col") == 0) {
+        } else if (strcmp(&argv[i][1], "pCol") == 0) {
             parallelCollision = true;
 	    cout << "Paralell collision detection." << endl;      
         }
