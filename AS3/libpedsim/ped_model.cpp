@@ -21,6 +21,9 @@ int startIndexY[COL_THREADS];
 int stopIndexY[COL_THREADS];
 int balanceSpeed[COL_THREADS];
 int lbTime;
+int sumPosX[COL_THREADS];
+int sumPosY[COL_THREADS];
+int totalAgents;
 Ped::Net *net;
 
 void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, 
@@ -45,8 +48,10 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario,
     }
     
 
+    totalAgents = 0;
     for (int i = 0; i < crowds.size(); i++) {
       Net::Npair par = (Net::Npair) malloc(sizeof(Net::_Npair) * crowds[i]->NumberOfAgents);  	 
+      totalAgents += crowds[i]->NumberOfAgents;
       for (int j = 0; j < crowds[i]->NumberOfAgents; j++) {
 	  par[j].first = crowds[i];
 	  par[j].second = j;
@@ -54,7 +59,6 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario,
 	 
         }
     }
-
 
     if (parallelCollision == true){
       int *id = new int[COL_THREADS];
@@ -180,20 +184,22 @@ void Ped::Model::tick()
     //Naive load balance
     //JIT load blancing
       if (lbTime == 5) {
-          int diff = abs((ThreadsWork[0]+ThreadsWork[2])-(ThreadsWork[1]+ThreadsWork[3]));
-          if(diff > 10){
-            if ((ThreadsWork[0]+ThreadsWork[2]) > (ThreadsWork[1]+ThreadsWork[3])) {
-                stopIndexX[0] -= 1;
-                startIndexX[1] -= 1;
-                stopIndexX[2] -= 1;
-                startIndexX[3] -= 1;
-            } else {
-                stopIndexX[0] += 1;
-                startIndexX[1] += 1;
-                stopIndexX[2] += 1;
-                startIndexX[3] += 1;
-            }
-          }
+        int sumX = 0;
+        int sumY = 0; 
+        for (int i=0; i<COL_THREADS; i++) {
+            sumX += sumPosX[i];
+            sumY += sumPosY[i];
+        }
+        int avgX = sumX/totalAgents; 
+        int avgY = sumY/totalAgents; 
+        stopIndexX[0] = avgX;
+        stopIndexY[0] = avgY;
+        startIndexX[1] = avgX;
+        stopIndexY[1] = avgY;
+        stopIndexX[2] = avgX;
+        startIndexY[2] = avgY;
+        startIndexX[3] = avgX;
+        startIndexY[3] = avgY;
         lbTime = 0;
     }
     lbTime++;
@@ -363,7 +369,8 @@ void *Ped::Model::checkCollisions(void *data) {
   while (dontKill) {
     while (noCollisionCheck[id] == true) {}
     noCollisionCheck[id] = true;
-    ThreadsWork[id] = 0;
+    sumPosX[id] = 0;
+    sumPosY[id] = 0;
     //printf("start %d: %d\n", id, startIndex[id]);
     //printf("stop %d: %d\n", id, stopIndex[id]);
 
@@ -371,9 +378,10 @@ void *Ped::Model::checkCollisions(void *data) {
       for (int j = startIndexY[id]; j < stopIndexY[id]; j++) {
 	Net::Npair Agent = net->field[j][i];
 	if(Agent != NULL){
-	  ThreadsWork[id]++;
-	  if(Agent->first->AgentsY[Agent->second] >= (stopIndexX[id]-1) or
-	     Agent->first->AgentsY[Agent->second] <= (startIndexX[id]-1) or
+      sumPosX[id] += Agent->first->AgentsX[Agent->second];
+      sumPosY[id] += Agent->first->AgentsY[Agent->second];
+	  if(Agent->first->AgentsX[Agent->second] >= (stopIndexX[id]-1) or
+	     Agent->first->AgentsX[Agent->second] <= (startIndexX[id]-1) or
          Agent->first->AgentsY[Agent->second] >= (stopIndexY[id]-1) or
          Agent->first->AgentsY[Agent->second] <= (startIndexY[id]-1)){
 	    
