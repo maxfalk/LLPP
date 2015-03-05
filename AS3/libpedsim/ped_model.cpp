@@ -18,6 +18,7 @@ int stopIndexY[COL_THREADS];
 int sumPosX[COL_THREADS];
 int sumPosY[COL_THREADS];
 int totalAgents;
+int threadsWork[COL_THREADS];
 Ped::Net *net;
 
 void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario, 
@@ -28,7 +29,7 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario,
     implementation = _mode;
     parallelCollision = _parallelCollision;
     crowd = crowds;
-    net = new Net(400,400);
+    net = new Net(200,200);
 
     if(implementation == CUDA){
       for(int i = 0; i < crowds.size(); i++){
@@ -49,7 +50,7 @@ void Ped::Model::setup(std::vector<Ped::Crowd*> crowdInScenario,
         }
     }
 
-    if(parallelCollision = true){
+    if(parallelCollision){
       startIndexX[0] = 0;
       stopIndexX[0] = (net->sizeX)/2;
       startIndexY[0] = 0;
@@ -215,30 +216,6 @@ void Ped::Model::tick()
       }
     }
   }
-  /*
-   int totalOfAgents = 0;
-   int actualAgents = 0;
-   for(int i = 0; i < crowds.size(); i++){
-     totalOfAgents += crowds[i]->NumberOfAgents;
-     }
-      omp_set_dynamic(0);
-     omp_set_num_threads(nrOfThreads);
-   //OMP here
-    
-     for (int i = 0; i < net->sizeX; i++) {
-        #pragma omp parallel for reduction (+:actualAgents)
-         for (int j = 0; j < net->sizeY; j++) {
-            if (net->field[i][j] != NULL) {
-                 actualAgents++;
-             }
-         }
-     }
-     
-     assert(totalOfAgents == actualAgents);
-  */
-
-
-
 }
 
 void Ped::Model::doSafeMovement(Net::Npair Agent){
@@ -342,14 +319,15 @@ void *Ped::Model::checkCollisions(void *data) {
   int id = *((int*) data);
   sumPosX[id] = 0;
   sumPosY[id] = 0;
-  
+  threadsWork[id] = 0; 
   for (int i = startIndexX[id]; i < stopIndexX[id]; i++) {
     for (int j = startIndexY[id]; j < stopIndexY[id]; j++) {
       Net::Npair Agent = net->field[j][i];
       if(Agent != NULL){
-	sumPosX[id] += Agent->first->AgentsX[Agent->second];
-	sumPosY[id] += Agent->first->AgentsY[Agent->second];
-	if(Agent->first->AgentsX[Agent->second] >= (stopIndexX[id]-1) or
+        threadsWork[id]++; 
+        sumPosX[id] += Agent->first->AgentsX[Agent->second];
+        sumPosY[id] += Agent->first->AgentsY[Agent->second];
+        if(Agent->first->AgentsX[Agent->second] >= (stopIndexX[id]-1) or
 	   Agent->first->AgentsX[Agent->second] <= (startIndexX[id]-1) or
 	   Agent->first->AgentsY[Agent->second] >= (stopIndexY[id]-1) or
 	   Agent->first->AgentsY[Agent->second] <= (startIndexY[id]-1)){
@@ -361,9 +339,5 @@ void *Ped::Model::checkCollisions(void *data) {
       }
     }
   }
-  
-}
-
-void Ped::Model::cleanup() {
   
 }

@@ -17,7 +17,6 @@ namespace Ped{
     void tick();
     const std::vector<Crowd*> getCrowds() const;
 
-    void cleanup();
     //~Model();
 
 
