@@ -21,7 +21,6 @@ namespace Ped{
     void tick();
     const std::vector<Crowd*> getCrowds() const;
 
-    void cleanup();
     //~Model();
     int getHeatmapSize() const;
     int const * const * getHeatmap() const;
